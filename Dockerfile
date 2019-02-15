@@ -10,9 +10,10 @@ ENV APCA_API_SECRET_KEY=$APCA_API_SECRET_KEY
 ENV APCA_API_KEY_ID=$APCA_API_KEY_ID
 ENV APCA_API_BASE_URL=$APCA_API_BASE_URL
 
-RUN mkdir /app
+RUN mkdir -p /app/{algo,tmp}
 
-ADD . /app
+ADD algo /app/algo
+ADD tmp /app/tmp
 
 WORKDIR /app
 
