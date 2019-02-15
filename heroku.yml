@@ -6,7 +6,3 @@ build:
     ALGO: $ALGO
   docker:
     worker: docker/Dockerfile
-
-run:
-  worker:
-    image: worker
