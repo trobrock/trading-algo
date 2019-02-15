@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+
+if [ -z "$(which heroku)" ]; then
+  echo "Please install the heroku command line tools and try again."
+  echo "https://devcenter.heroku.com/articles/heroku-cli"
+  exit 1
+fi
+
+echo "Checking heroku login..."
+if [ -z "$(heroku auth:whoami)" ]; then
+  heroku login
+fi
+
+set -e
+
+# Clone
+git clone https://github.com/trobrock/trading-algo.git
+cd trading-algo
+
+# Create heroku app
+echo
+echo "We are about to create an app on your heroku account."
+echo "Press ENTER when you are ready to proceed"
+read
+
+heroku create --stack=container
+APP_NAME="$(git remote show heroku | awk '/Push/{ print $3 }' | cut -d/ -f4- | cut -d. -f1)"
+
+# Configure heroku app
+echo
+echo "Now we are going to configure your application."
+echo
+read -s -p "Alpaca API Key (typing is hidden): " API_KEY
+echo
+read -s -p "Alpaca API Secret Key (typing is hidden): " API_SECRET
+echo
+read -p "Alpaca Paper Trading? (Y/n) " PAPER
+
+if [ -z "$PAPER" ] || [ "$PAPER" -eq "y" ] || [ "$PAPER" -eq "Y" ]; then
+  API_HOST="https://paper-api.alpaca.markets"
+else
+  API_HOST="https://api.alpaca.markets"
+fi
+
+echo
+echo "Now place your algorithm in the algo directory ($PWD/algo)"
+echo "This algorithm has to be compatible with pylivetrader,"
+echo "you can read more about how to port a Quantopian algo to this framework"
+echo "here: https://github.com/alpacahq/pylivetrader/blob/master/migration.md"
+echo
+read -p "Press ENTER when you've placed the algorithm in the directory..."
+ALGO_NAME="$(git status -s algo | awk '{ print $2 }' | cut -d/ -f2)"
+if [ -z "$ALGO_NAME" ]; then
+  echo "Algo wasn't found, if you intend to use a built-in algo, then enter it's name next."
+  read -p "Algo File Name: " ALGO_NAME
+else
+  git add algo
+  git commit -m "Adding our algorithm"
+fi
+
+echo "Configuring app..."
+heroku stack:set -a $APP_NAME container
+heroku config:set -a $APP_NAME "ALGO=$ALGO_NAME" "APCA_API_BASE_URL=$API_HOST" "APCA_API_KEY_ID=$API_KEY" "APCA_API_SECRET_KEY=$API_SECRET"
+git push heroku master
+heroku ps:scale -a $APP_NAME 'worker=1'
+
+echo
+echo "Congratulations! Your algorithm is running. To check it's logs run 'heroku logs --tail -a $APP_NAME'"
