@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if [ -z "$(which git)" ]; then
+  echo "Please install git and then try again."
+  exit 1
+fi
+
 if [ -z "$(which heroku)" ]; then
   echo "Please install the heroku command line tools and try again."
   echo "https://devcenter.heroku.com/articles/heroku-cli"
