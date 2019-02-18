@@ -31,6 +31,12 @@ read
 heroku create --stack=container
 APP_NAME="$(git remote show heroku | awk '/Push/{ print $3 }' | cut -d/ -f4- | cut -d. -f1)"
 
+# Install redis
+echo
+echo "We are adding the Redis To Go addon (free) to your heroku app"
+echo
+heroku addons:create -a $APP_NAME redistogo:nano
+
 # Configure heroku app
 echo
 echo "Now we are going to configure your application."
