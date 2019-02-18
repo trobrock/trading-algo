@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+if [ "$USE_REDIS" == 1 ]; then
+  exec pylivetrader run -f algo/$1 --storage-engine redis
+else
+  exec pylivetrader run -f algo/$1 --storage-engine file --statefile tmp/state/$1.pkl
+fi

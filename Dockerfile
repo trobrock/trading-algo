@@ -1,5 +1,15 @@
 FROM alpacamarkets/pylivetrader
 
+RUN git clone --depth 1 https://github.com/trobrock/pylivetrader.git --branch redis-state-store --single-branch && \
+    cd pylivetrader && \
+    python setup.py install && \
+    cd .. && rm -rf pylivetrader
+
+# Change to 0 to disable the installation of the redis library
+ARG USE_REDIS=1
+ENV USE_REDIS=$USE_REDIS
+RUN bash -c 'if [ "$USE_REDIS" == 1 ] ; then pip install redis ; fi'
+
 ARG ALGO
 ARG APCA_API_SECRET_KEY
 ARG APCA_API_KEY_ID
@@ -17,4 +27,4 @@ ADD tmp /app/tmp
 
 WORKDIR /app
 
-CMD pylivetrader run -f algo/$ALGO --statefile tmp/state/$ALGO.pkl
+CMD ./run $ALGO
