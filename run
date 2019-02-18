@@ -4,8 +4,14 @@ if [ ! -z "$REDISTOGO_URL" ]; then
   export REDIS_URL="$REDISTOGO_URL"
 fi
 
+echo "Starting pylivetrader with:"
+echo "API URL: $APCA_API_BASE_URL"
+echo "ALGO: $1"
 if [ "$USE_REDIS" == 1 ]; then
+  echo "Redis enabled: YES"
   exec pylivetrader run -f algo/$1 --storage-engine redis
 else
+  echo "Redis enabled: NO"
+  echo "State file: tmp/state/$1.pkl"
   exec pylivetrader run -f algo/$1 --storage-engine file --statefile tmp/state/$1.pkl
 fi
