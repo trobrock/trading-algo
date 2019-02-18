@@ -289,7 +289,10 @@ def my_record_vars(context, data):
     if 0 < len(context.age):
         MaxAge = context.age[max(
             context.age.keys(), key=(lambda k: context.age[k]))]
+        MinAge = context.age(min(
+            context.age.keys(), key=(lambda k: context.age[k]))]
         record(MaxAge=MaxAge)
+        record(MinAge=MinAge)
 
     limits = investment_limits(context)
     record(ExcessCash=limits['excess_cash'])
