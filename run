@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if [ ! -z "$REDISTOGO_URL" ]; then
-  REDIS_URL="$REDISTOGO_URL"
+  export REDIS_URL="$REDISTOGO_URL"
 fi
 
 if [ "$USE_REDIS" == 1 ]; then
