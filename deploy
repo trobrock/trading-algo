@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+git commit --allow-empty -m "Deploy $(date)"
+git push -f heroku master
