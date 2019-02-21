@@ -249,7 +249,10 @@ def my_rebalance(context, data):
                           )
 
     WeightThisBuyOrder = float(1.00 / context.MaxBuyOrdersAtOnce)
+    total_cost = 0
     for ThisBuyOrder in range(context.MaxBuyOrdersAtOnce):
+        if total_cost >= cash:
+            break
         stock = context.MyCandidate.__next__()
         PH = data.history([stock], 'price', 20, '1d')
         PH_Avg = float(PH.mean())
@@ -263,6 +266,7 @@ def my_rebalance(context, data):
                 BuyPrice = float(CurrPrice * BuyFactor)
             BuyPrice = float(make_div_by_05(BuyPrice, buy=True))
             StockShares = max(1, int(WeightThisBuyOrder * cash / BuyPrice))
+            total_cost += BuyPrice * StockShares
             log.info("BUY: %s of %s @ $%.4f" % (stock, BuyPrice, StockShares))
             order(stock, StockShares,
                   style=LimitOrder(BuyPrice)
