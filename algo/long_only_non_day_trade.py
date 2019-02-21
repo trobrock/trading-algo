@@ -262,7 +262,7 @@ def my_rebalance(context, data):
             else:
                 BuyPrice = float(CurrPrice * BuyFactor)
             BuyPrice = float(make_div_by_05(BuyPrice, buy=True))
-            StockShares = int(WeightThisBuyOrder * cash / BuyPrice)
+            StockShares = max(1, int(WeightThisBuyOrder * cash / BuyPrice))
             log.info("BUY: %s @ $%.4f" % (stock, StockShares))
             order(stock, StockShares,
                   style=LimitOrder(BuyPrice)
@@ -270,13 +270,11 @@ def my_rebalance(context, data):
 
 # if cents not divisible by .05, round down if buy, round up if sell
 
-
 def make_div_by_05(s, buy=False):
     s *= 20.00
     s = math.floor(s) if buy else math.ceil(s)
     s /= 20.00
     return s
-
 
 def my_record_vars(context, data):
     """
