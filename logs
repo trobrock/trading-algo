@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+echo "******************************"
+echo "PRESS CTRL-C TO STOP AT ANYTIME"
+echo "******************************"
+
+exec heroku logs --tail
