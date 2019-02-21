@@ -263,7 +263,7 @@ def my_rebalance(context, data):
                 BuyPrice = float(CurrPrice * BuyFactor)
             BuyPrice = float(make_div_by_05(BuyPrice, buy=True))
             StockShares = max(1, int(WeightThisBuyOrder * cash / BuyPrice))
-            log.info("BUY: %s @ $%.4f" % (stock, StockShares))
+            log.info("BUY: %s of %s @ $%.4f" % (stock, BuyPrice, StockShares))
             order(stock, StockShares,
                   style=LimitOrder(BuyPrice)
                   )
