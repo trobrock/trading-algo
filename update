@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 git fetch -p origin
-git reset --hard origin master
+git reset --hard origin/master
