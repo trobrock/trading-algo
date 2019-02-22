@@ -11,6 +11,7 @@ log = logbook.Logger('algo')
 
 import numpy as np  # needed for NaN handling
 import math  # ceil and floor are useful for rounding
+import dateutil
 
 from itertools import cycle
 
@@ -170,7 +171,8 @@ def before_trading_start(context, data):
     # https://docs.alpaca.markets/platform-migration/zipline-to-pylivetrader/#deal-with-restart
     today = get_datetime().floor('1D')
     last_date = getattr(context, 'last_date', None)
-    if today == last_date:
+    log.info("today:%s, last_date:%s, parsed: %s" % (today, last_date, dateutil.parser.parse(last_date)))
+    if last_date and today == dateutil.parser.parse(last_date):
         log.info("Skipping before_trading_start because it's already ran today")
         return
 
