@@ -165,6 +165,7 @@ def my_compute_weights(context):
 
 
 def before_trading_start(context, data):
+    log.info("RUNNING before_trading_start")
     # Prevent running more than once a day:
     # https://docs.alpaca.markets/platform-migration/zipline-to-pylivetrader/#deal-with-restart
     today = get_datetime().floor('1D')
@@ -204,7 +205,6 @@ def my_rebalance(context, data):
 
     # Order sell at profit target in hope that somebody actually buys it
     for stock in context.portfolio.positions:
-        log.info(context.age)
         if not get_open_orders(stock):
             StockShares = context.portfolio.positions[stock].amount
             CurrPrice = float(data.current([stock], 'price'))
