@@ -171,7 +171,6 @@ def before_trading_start(context, data):
     # https://docs.alpaca.markets/platform-migration/zipline-to-pylivetrader/#deal-with-restart
     today = get_datetime().floor('1D')
     last_date = getattr(context, 'last_date', None)
-    log.info("today:%s, last_date:%s" % (today, last_date))
     if today == last_date:
         log.info("Skipping before_trading_start because it's already ran today")
         return
