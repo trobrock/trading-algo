@@ -170,6 +170,7 @@ def before_trading_start(context, data):
     today = get_datetime().floor('1D')
     last_date = getattr(context, 'last_date', None)
     if today == last_date:
+        log.info("Skipping before_trading_start because it's already ran today")
         return
 
     context.output = pipeline_output('my_pipeline')
@@ -193,8 +194,6 @@ def before_trading_start(context, data):
     for stock in context.age:
         if stock not in context.portfolio.positions:
             context.age[stock] = 0
-        # message = 'stock.symbol: {symbol}  :  age: {age}'
-        # log.info(message.format(symbol=stock.symbol, age=context.age[stock]))
 
 def my_rebalance(context, data):
     BuyFactor = .99
