@@ -2,3 +2,5 @@
 
 git fetch -p origin
 git reset --hard origin/master
+
+exec ./deploy
