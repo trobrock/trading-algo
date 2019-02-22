@@ -171,8 +171,8 @@ def before_trading_start(context, data):
     # https://docs.alpaca.markets/platform-migration/zipline-to-pylivetrader/#deal-with-restart
     today = get_datetime().floor('1D')
     last_date = getattr(context, 'last_date', None)
-    log.info("today:%s, last_date:%s, parsed: %s" % (today, last_date, dateutil.parser.parse(last_date)))
-    if last_date and today == dateutil.parser.parse(last_date):
+    log.info("today:%s, last_date:%s" % (today, last_date))
+    if today == last_date:
         log.info("Skipping before_trading_start because it's already ran today")
         return
 
@@ -197,6 +197,9 @@ def before_trading_start(context, data):
     for stock in context.age:
         if stock not in context.portfolio.positions:
             context.age[stock] = 0
+
+    # Track the last run
+    context.last_date = today
 
 def my_rebalance(context, data):
     BuyFactor = .99
