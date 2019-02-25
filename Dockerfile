@@ -1,4 +1,4 @@
-FROM alpacamarkets/pylivetrader:0.0.13
+FROM alpacamarkets/pylivetrader
 
 RUN git clone --depth 1 https://github.com/trobrock/pylivetrader.git --branch redis-state-store --single-branch && \
     cd pylivetrader && \
