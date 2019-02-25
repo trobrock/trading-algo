@@ -1,4 +1,9 @@
-FROM alpacamarkets/pylivetrader:0.0.25
+FROM alpacamarkets/pylivetrader
+
+RUN git clone --depth 1 https://github.com/trobrock/pylivetrader.git --branch redis-state-store --single-branch && \
+    cd pylivetrader && \
+    python setup.py install && \
+    cd .. && rm -rf pylivetrader
 
 # Change to 0 to disable the installation of the redis library
 ARG USE_REDIS=1
