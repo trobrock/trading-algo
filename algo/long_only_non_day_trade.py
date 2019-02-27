@@ -254,6 +254,9 @@ def my_rebalance(context, data):
     WeightThisBuyOrder = float(1.00 / context.MaxBuyOrdersAtOnce)
     for ThisBuyOrder in range(context.MaxBuyOrdersAtOnce):
         stock = context.MyCandidate.__next__()
+        if stock in get_open_orders():
+            for open_order in get_open_orders(stock):
+                cancel_order(order)
         PH = data.history([stock], 'price', 20, '1d')
         PH_Avg = float(PH.mean())
         CurrPrice = float(data.current([stock], 'price'))
