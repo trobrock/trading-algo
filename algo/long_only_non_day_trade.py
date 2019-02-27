@@ -258,7 +258,7 @@ def my_rebalance(context, data):
         # up against the PDT rule
         if stock in get_open_orders():
             for open_order in get_open_orders(stock):
-                cancel_order(order)
+                cancel_order(open_order)
         PH = data.history([stock], 'price', 20, '1d')
         PH_Avg = float(PH.mean())
         CurrPrice = float(data.current([stock], 'price'))
