@@ -254,6 +254,8 @@ def my_rebalance(context, data):
     WeightThisBuyOrder = float(1.00 / context.MaxBuyOrdersAtOnce)
     for ThisBuyOrder in range(context.MaxBuyOrdersAtOnce):
         stock = context.MyCandidate.__next__()
+        # This cancels open sales that would prevent these buys from being submitted if running
+        # up against the PDT rule
         if stock in get_open_orders():
             for open_order in get_open_orders(stock):
                 cancel_order(order)
