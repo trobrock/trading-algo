@@ -207,6 +207,7 @@ def my_rebalance(context, data):
 
     cancel_open_buy_orders(context, data)
 
+    fire_sale = []
     # Order sell at profit target in hope that somebody actually buys it
     for stock in context.portfolio.positions:
         if not get_open_orders(stock):
@@ -236,6 +237,7 @@ def my_rebalance(context, data):
                 elif stock not in context.age:
                     context.age[stock] = 1
                 else:
+                    fire_sale.append(stock)
                     SellPrice = float(
                         make_div_by_05(.95 * CurrPrice, buy=False))
                     order(stock, -StockShares,
@@ -254,6 +256,8 @@ def my_rebalance(context, data):
     WeightThisBuyOrder = float(1.00 / context.MaxBuyOrdersAtOnce)
     for ThisBuyOrder in range(context.MaxBuyOrdersAtOnce):
         stock = context.MyCandidate.__next__()
+        if stock in fire_sale:
+            continue
         # This cancels open sales that would prevent these buys from being submitted if running
         # up against the PDT rule
         if stock in get_open_orders():
