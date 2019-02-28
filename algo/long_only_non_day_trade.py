@@ -238,6 +238,7 @@ def my_rebalance(context, data):
                     context.age[stock] = 1
                 else:
                     fire_sale.append(stock)
+                    log.info("%s is in fire sale!" % stock.symbol)
                     SellPrice = float(
                         make_div_by_05(.95 * CurrPrice, buy=False))
                     order(stock, -StockShares,
@@ -257,6 +258,7 @@ def my_rebalance(context, data):
     for ThisBuyOrder in range(context.MaxBuyOrdersAtOnce):
         stock = context.MyCandidate.__next__()
         if stock in fire_sale:
+            log.info("Not buying %s because it's in fire sale" % stock.symbol)
             continue
         # This cancels open sales that would prevent these buys from being submitted if running
         # up against the PDT rule
