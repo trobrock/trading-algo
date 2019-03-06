@@ -255,11 +255,6 @@ def my_rebalance(context, data):
     WeightThisBuyOrder = float(1.00 / context.MaxBuyOrdersAtOnce)
     for ThisBuyOrder in range(context.MaxBuyOrdersAtOnce):
         stock = context.MyCandidate.__next__()
-        # This cancels open sales that would prevent these buys from being submitted if running
-        # up against the PDT rule
-        if stock in get_open_orders():
-            for open_order in get_open_orders(stock):
-                cancel_order(open_order)
         PH = data.history([stock], 'price', 20, '1d')
         PH_Avg = float(PH.mean())
         CurrPrice = float(data.current([stock], 'price'))
@@ -272,6 +267,14 @@ def my_rebalance(context, data):
                 BuyPrice = float(CurrPrice * BuyFactor)
             BuyPrice = float(make_div_by_05(BuyPrice, buy=True))
             StockShares = int(WeightThisBuyOrder * cash / BuyPrice)
+            positions = context.portfolio.positions
+            if stock in positions and positions[stock].amount >= StockShares:
+                continue
+            # This cancels open sales that would prevent these buys from being submitted if running
+            # up against the PDT rule
+            if stock in get_open_orders():
+                for open_order in get_open_orders(stock):
+                    cancel_order(open_order)
             order(stock, StockShares,
                   style=LimitOrder(BuyPrice)
                   )
