@@ -1,5 +1,15 @@
 from zipline.pipeline import Pipeline
-from pylivetrader.api import *
+from pylivetrader.api import (
+                             schedule_function,
+                             date_rules,
+                             time_rules,
+                             attach_pipeline,
+                             get_datetime,
+                             pipeline_output,
+                             get_open_orders,
+                             order,
+                             cancel_order
+                             )
 from pipeline_live.data.iex.pricing import USEquityPricing
 from pipeline_live.data.iex.fundamentals import IEXCompany, IEXKeyStats
 from pipeline_live.data.iex.factors import SimpleMovingAverage, AverageDollarVolume
@@ -25,6 +35,8 @@ def initialize(context):
     context.MyMostPrice = 25.00
     context.MyFireSalePrice = context.MyLeastPrice
     context.MyFireSaleAge = 6
+    context.buy_factor = .99
+    context.sell_factor = 1.01
 
     context.MaxInvestment = 150000
 
@@ -201,10 +213,6 @@ def before_trading_start(context, data):
     context.last_date = today
 
 def my_rebalance(context, data):
-    BuyFactor = .99
-    SellFactor = 1.01
-    cash = min(investment_limits(context)['remaining_to_invest'], context.portfolio.cash)
-
     cancel_open_buy_orders(context, data)
 
     # Order sell at profit target in hope that somebody actually buys it
@@ -216,7 +224,7 @@ def my_rebalance(context, data):
             SellPrice = float(
                 make_div_by_05(
                     CostBasis *
-                    SellFactor,
+                    context.sell_factor,
                     buy=False))
 
             if np.isnan(SellPrice):
@@ -252,35 +260,42 @@ def my_rebalance(context, data):
                           style=LimitOrder(SellPrice)
                           )
 
-    WeightThisBuyOrder = float(1.00 / context.MaxBuyOrdersAtOnce)
+    weight = float(1.00 / context.MaxBuyOrdersAtOnce)
     for ThisBuyOrder in range(context.MaxBuyOrdersAtOnce):
-        stock = context.MyCandidate.__next__()
-        PH = data.history([stock], 'price', 20, '1d')
-        PH_Avg = float(PH.mean())
-        CurrPrice = float(data.current([stock], 'price'))
-        if np.isnan(CurrPrice):
-            pass  # probably best to wait until nan goes away
-        else:
-            if CurrPrice > float(1.25 * PH_Avg):
-                BuyPrice = float(CurrPrice)
-            else:
-                BuyPrice = float(CurrPrice * BuyFactor)
-            BuyPrice = float(make_div_by_05(BuyPrice, buy=True))
-            StockShares = int(WeightThisBuyOrder * cash / BuyPrice)
-            max_size = int(WeightThisBuyOrder * context.portfolio.portfolio_value / BuyPrice)
-            positions = context.portfolio.positions
-            if stock in positions and positions[stock].amount >= max_size:
-                continue
-            # This cancels open sales that would prevent these buys from being submitted if running
-            # up against the PDT rule
-            if stock in get_open_orders():
-                for open_order in get_open_orders(stock):
-                    cancel_order(open_order)
-            order(stock, StockShares,
-                  style=LimitOrder(BuyPrice)
-                  )
+        submit_buy(context.MyCandidate.__next__(), context, data, weight)
 
-# if cents not divisible by .05, round down if buy, round up if sell
+def submit_buy(stock, context, data, weight):
+    cash = min(investment_limits(context)['remaining_to_invest'], context.portfolio.cash)
+
+    price_history = data.history([stock], 'price', 20, '1d')
+    average_price = float(price_history.mean())
+    current_price = float(data.current([stock], 'price'))
+
+    if np.isnan(current_price):
+        pass  # probably best to wait until nan goes away
+    else:
+        if current_price > float(1.25 * average_price): # if the price is 25% above the 20d avg
+            buy_price = float(current_price)
+        else: # Otherwise buy at a discount
+            buy_price = float(current_price * context.buy_factor)
+        buy_price = float(make_div_by_05(buy_price, buy=True))
+        shares_to_buy = int(weight * cash / buy_price)
+        max_exposure = int(weight * context.portfolio.portfolio_value / buy_price)
+
+        # Prevent over exposing to a particular stock, never own more than 1/max_buy_orders
+        # of our account value
+        positions = context.portfolio.positions
+        if stock in positions and positions[stock].amount >= max_exposure:
+            return
+
+        # This cancels open sales that would prevent these buys from being submitted if running
+        # up against the PDT rule
+        open_orders = get_open_orders()
+        if stock in open_orders:
+            for open_order in open_orders[stock]:
+                cancel_order(open_order)
+
+        order(stock, shares_to_buy, style=LimitOrder(buy_price))
 
 def make_div_by_05(s, buy=False):
     s *= 20.00
