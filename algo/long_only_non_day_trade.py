@@ -268,7 +268,7 @@ def my_rebalance(context, data):
             BuyPrice = float(make_div_by_05(BuyPrice, buy=True))
             StockShares = int(WeightThisBuyOrder * cash / BuyPrice)
             positions = context.portfolio.positions
-            if stock in positions and positions[stock].amount >= StockShares:
+            if stock in positions and positions[stock].amount >= int(WeightThisBuyOrder * context.portfolio.portfolio_value):
                 continue
             # This cancels open sales that would prevent these buys from being submitted if running
             # up against the PDT rule
