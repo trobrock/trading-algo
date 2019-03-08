@@ -265,6 +265,7 @@ def my_rebalance(context, data):
         submit_buy(context.MyCandidate.__next__(), context, data, weight)
 
 def submit_buy(stock, context, data, weight):
+    return
     cash = min(investment_limits(context)['remaining_to_invest'], context.portfolio.cash)
 
     price_history = data.history([stock], 'price', 20, '1d')
