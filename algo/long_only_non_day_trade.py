@@ -45,19 +45,14 @@ def initialize(context):
         context.age = {}
 
     # Rebalance
-    EveryThisManyMinutes = 10
-    TradingDayHours = 6.5
-    TradingDayMinutes = int(TradingDayHours * 60)
-    for minutez in range(
-        1,
-        TradingDayMinutes,
-        EveryThisManyMinutes
-    ):
-        schedule_function(
-            my_rebalance,
-            date_rules.every_day(),
-            time_rules.market_open(
-                minutes=minutez))
+    minutes = 10
+    trading_hours = 6.5
+    trading_minutes = int(trading_hours * 60)
+    for minutez in range(1, trading_minutes, minutes):
+        schedule_function(my_rebalance,
+                date_rules.every_day(),
+                time_rules.market_open(
+                    minutes=minutez))
 
     # Prevent excessive logging of canceled orders at market close.
     schedule_function(
@@ -166,17 +161,6 @@ Algorithm initialized variables:
         screen=(securities_to_trade),
     )
 
-
-def my_compute_weights(context):
-    """
-    Compute ordering weights.
-    """
-    # Compute even target weights for our long positions and short positions.
-    stocks_worst_weight = 1.00 / len(context.stocks_worst)
-
-    return stocks_worst_weight
-
-
 def before_trading_start(context, data):
     log.info("RUNNING before_trading_start")
     # Prevent running more than once a day:
@@ -189,25 +173,21 @@ def before_trading_start(context, data):
 
     context.output = pipeline_output('my_pipeline')
 
-    context.stocks_worst = context.output[
-        context.output['stocks_worst']].index.tolist()
-
-    context.stocks_worst_weight = my_compute_weights(context)
-
+    context.stocks_worst = context.output[context.output['stocks_worst']].index.tolist()
     context.MyCandidate = cycle(context.stocks_worst)
 
-    context.LowestPrice = context.MyLeastPrice  # reset beginning of day
+    # Update ages
     for stock in context.portfolio.positions:
-        CurrPrice = float(data.current([stock], 'price'))
-        if CurrPrice < context.LowestPrice:
-            context.LowestPrice = CurrPrice
         if stock in context.age:
             context.age[stock] += 1
         else:
+            log.info("Could not find %s in context.age" % stock.symbol)
             context.age[stock] = 1
+
+    # Remove stale ages
     for stock in context.age:
         if stock not in context.portfolio.positions:
-            context.age[stock] = 0
+            del context.age[stock]
 
     # Track the last run
     context.last_date = today
@@ -217,55 +197,44 @@ def my_rebalance(context, data):
 
     # Order sell at profit target in hope that somebody actually buys it
     for stock in context.portfolio.positions:
-        if not get_open_orders(stock):
-            StockShares = context.portfolio.positions[stock].amount
-            CurrPrice = float(data.current([stock], 'price'))
-            CostBasis = float(context.portfolio.positions[stock].cost_basis)
-            SellPrice = float(
-                make_div_by_05(
-                    CostBasis *
-                    context.sell_factor,
-                    buy=False))
-
-            if np.isnan(SellPrice):
-                pass  # probably best to wait until nan goes away
-            elif (stock in context.age and context.age[stock] == 1):
-                pass
-            elif (
-                stock in context.age
-                and context.MyFireSaleAge <= context.age[stock]
-                and (
-                    context.MyFireSalePrice > CurrPrice
-                    or CostBasis > CurrPrice
-                )
-            ):
-                if (stock in context.age and context.age[stock] < 2):
-                    pass
-                elif stock not in context.age:
-                    context.age[stock] = 1
-                else:
-                    log.info("%s is in fire sale!" % stock.symbol)
-                    SellPrice = float(
-                        make_div_by_05(.95 * CurrPrice, buy=False))
-                    order(stock, -StockShares,
-                          style=LimitOrder(SellPrice)
-                          )
-            else:
-                if (stock in context.age and context.age[stock] < 2):
-                    pass
-                elif stock not in context.age:
-                    context.age[stock] = 1
-                else:
-                    order(stock, -StockShares,
-                          style=LimitOrder(SellPrice)
-                          )
+        submit_sell(stock, context, data)
 
     weight = float(1.00 / context.MaxBuyOrdersAtOnce)
     for ThisBuyOrder in range(context.MaxBuyOrdersAtOnce):
         submit_buy(context.MyCandidate.__next__(), context, data, weight)
 
+def submit_sell(stock, context, data):
+    if get_open_orders(stock):
+        return
+
+    # We bought a stock but don't know it's age yet
+    if stock not in context.age:
+        context.age[stock] = 0
+
+    # Don't sell stuff that's less than 1 day old
+    if stock in context.age and context.age[stock] < 1:
+        return
+
+    shares = context.portfolio.positions[stock].amount
+    current_price = float(data.current([stock], 'price'))
+    cost_basis = float(context.portfolio.positions[stock].cost_basis)
+
+    if (context.age[stock] >= context.MyFireSaleAge and
+            (current_price < context.MyFireSalePrice or current_price < cost_basis)):
+        log.info("%s is in fire sale!" % stock.symbol)
+        sell_price = float(make_div_by_05(.95 * current_price, buy=False))
+
+        order(stock, -shares, style=LimitOrder(sell_price))
+    else:
+        sell_price = float(
+            make_div_by_05(
+                cost_basis *
+                context.sell_factor,
+                buy=False))
+
+        order(stock, -shares, style=LimitOrder(sell_price))
+
 def submit_buy(stock, context, data, weight):
-    return
     cash = min(investment_limits(context)['remaining_to_invest'], context.portfolio.cash)
 
     price_history = data.history([stock], 'price', 20, '1d')
@@ -324,27 +293,6 @@ def my_record_vars(context, data):
     record(ExcessCash=limits['excess_cash'])
     record(Invested=limits['invested'])
     record(RemainingToInvest=limits['remaining_to_invest'])
-
-def log_open_order(StockToLog):
-    oo = get_open_orders()
-    if len(oo) == 0:
-        return
-    for stock, orders in oo.items():
-        if stock == StockToLog:
-            for o in orders:
-                message = 'Found open order for {amount} shares in {stock}'
-                log.info(message.format(amount=o.amount, stock=stock))
-
-
-def log_open_orders():
-    oo = get_open_orders()
-    if len(oo) == 0:
-        return
-    for stock, orders in oo.items():
-        for o in orders:
-            message = 'Found open order for {amount} shares in {stock}'
-            log.info(message.format(amount=o.amount, stock=stock))
-
 
 def cancel_open_buy_orders(context, data):
     oo = get_open_orders()
