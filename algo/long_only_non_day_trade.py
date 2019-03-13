@@ -185,9 +185,7 @@ def before_trading_start(context, data):
             context.age[stock] = 1
 
     # Remove stale ages
-    for stock in context.age:
-        if stock not in context.portfolio.positions:
-            del context.age[stock]
+    context.age = { stock: age for stock, age in context.age.items() if stock not in context.portfolio.positions }
 
     # Track the last run
     context.last_date = today
