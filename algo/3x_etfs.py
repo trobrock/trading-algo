@@ -33,7 +33,7 @@ def initialize(context):
     schedule_function(my_record_vars, date_rules.every_day(), time_rules.market_close())
 
     my_pipe = make_pipeline()
-    algo.attach_pipeline(my_pipe, 'my_pipeline')
+    attach_pipeline(my_pipe, 'my_pipeline')
 
 def make_pipeline():
     # My list of ETFS
