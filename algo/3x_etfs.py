@@ -10,7 +10,6 @@ from pylivetrader.api import (
                              cancel_order,
                              symbol
                              )
-import pylivetrader.algorithm as algo
 from zipline.pipeline import Pipeline
 from zipline.pipeline.filters import StaticAssets
 from pipeline_live.data.iex.pricing import USEquityPricing
@@ -120,7 +119,7 @@ def before_trading_start(context, data):
         log.info("Skipping before_trading_start because it's already ran today")
         return
 
-    pipe_results = algo.pipeline_output('my_pipeline')
+    pipe_results = pipeline_output('my_pipeline')
 
     context.longs = []
     for sec in pipe_results[pipe_results['longs']].index.tolist():
