@@ -41,22 +41,19 @@ def make_pipeline():
     )
 
     dollar_volume = AverageDollarVolume(
-        window_length=14,
-        mask=base_universe
+        window_length=14
     )
     high_dollar_volume = (dollar_volume > 10000000)
 
     mean_close_10 = SimpleMovingAverage(
         inputs=[USEquityPricing.close],
-        window_length=10,
-        mask=base_universe
+        window_length=10
     )
     mean_close_30 = SimpleMovingAverage(
         inputs=[USEquityPricing.close],
-        window_length=30,
-        mask=base_universe
+        window_length=30
     )
-    rsi = RSI(mask=base_universe)
+    rsi = RSI()
 
     percent_difference = (mean_close_10 - mean_close_30) / mean_close_30
     rsi_low = (rsi <= 40)
