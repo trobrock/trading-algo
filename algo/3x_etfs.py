@@ -120,6 +120,7 @@ def before_trading_start(context, data):
         return
 
     pipe_results = pipeline_output('my_pipeline')
+    log.info(pipe_results)
 
     context.longs = []
     for sec in pipe_results[pipe_results['longs']].index.tolist():
