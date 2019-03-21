@@ -72,7 +72,8 @@ def make_pipeline():
             'shorts': shorts,
             'rsi': rsi,
             'percent_difference': percent_difference
-        }
+        },
+        screen=base_universe
     )
 
 def compute_target_weights(context, data):
