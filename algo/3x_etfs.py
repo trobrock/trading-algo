@@ -72,8 +72,7 @@ def make_pipeline():
             'shorts': shorts,
             'rsi': rsi,
             'percent_difference': percent_difference
-        },
-        screen=securities_to_trade
+        }
     )
 
 def compute_target_weights(context, data):
