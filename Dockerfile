@@ -1,5 +1,10 @@
 FROM alpacamarkets/pylivetrader:0.0.25
 
+RUN git clone --depth 1 https://github.com/trobrock/pipeline-live.git --branch master --single-branch && \
+    cd pipeline-live && \
+    python setup.py install && \
+    cd .. && rm -rf pipeline-live
+
 # Change to 0 to disable the installation of the redis library
 ARG USE_REDIS=1
 ENV USE_REDIS=$USE_REDIS

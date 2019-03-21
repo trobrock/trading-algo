@@ -11,7 +11,7 @@ from pylivetrader.api import (
                              symbols
                              )
 from zipline.pipeline import Pipeline
-from zipline.pipeline.filters import StaticAssets
+from pipeline_live.data.polygon.filters import StaticSymbols
 from pipeline_live.data.iex.pricing import USEquityPricing
 from pipeline_live.data.iex.factors import SimpleMovingAverage, AverageDollarVolume, RSI
 from pylivetrader.finance.execution import LimitOrder
@@ -36,9 +36,7 @@ def initialize(context):
 
 def make_pipeline():
     # My list of ETFS
-    base_universe = StaticAssets(
-        symbols("DGAZ", "UGAZ", "JDST", "JNUG", "UWT", "DWT", "GUSH", "DRIP", "TQQQ", "SQQQ", "SPXS", "SPXL")
-    )
+    base_universe = StaticSymbols(symbols = ("DGAZ", "UGAZ", "JDST", "JNUG", "UWT", "DWT", "GUSH", "DRIP", "TQQQ", "SQQQ", "SPXS", "SPXL"))
 
     dollar_volume = AverageDollarVolume(
         window_length=14
