@@ -8,7 +8,7 @@ from pylivetrader.api import (
                              get_open_orders,
                              order,
                              cancel_order,
-                             symbol
+                             symbols
                              )
 from zipline.pipeline import Pipeline
 from zipline.pipeline.filters import StaticAssets
@@ -36,14 +36,9 @@ def initialize(context):
 
 def make_pipeline():
     # My list of ETFS
-    base_universe = StaticAssets([
-        symbol("DGAZ"), symbol("UGAZ"),
-        symbol("JDST"), symbol("JNUG"),
-        symbol("UWT"), symbol("DWT"),
-        symbol("GUSH"), symbol("DRIP"),
-        symbol("TQQQ"), symbol("SQQQ"),
-        symbol("SPXS"), symbol("SPXL")
-    ])
+    base_universe = StaticAssets(
+        symbols("DGAZ", "UGAZ", "JDST", "JNUG", "UWT", "DWT", "GUSH", "DRIP", "TQQQ", "SQQQ", "SPXS", "SPXL")
+    )
 
     dollar_volume = AverageDollarVolume(
         window_length=14,
