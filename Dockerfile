@@ -1,6 +1,7 @@
 FROM alpacamarkets/pylivetrader:0.0.25
 
 RUN git clone --depth 1 https://github.com/trobrock/pipeline-live.git --branch master --single-branch && \
+    pip uninstall -y pipeline-live && \
     cd pipeline-live && \
     python setup.py install && \
     cd .. && rm -rf pipeline-live
