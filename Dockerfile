@@ -29,4 +29,7 @@ ADD run /app
 
 WORKDIR /app
 
+RUN adduser -D tradealgo
+USER tradealgo
+
 CMD ./run $ALGO
