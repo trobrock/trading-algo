@@ -11,10 +11,23 @@ from pylivetrader.api import (
                              symbols
                              )
 from zipline.pipeline import Pipeline
-from pipeline_live.data.polygon.filters import StaticSymbols
 from pipeline_live.data.iex.pricing import USEquityPricing
 from pipeline_live.data.iex.factors import SimpleMovingAverage, AverageDollarVolume, RSI
 from pylivetrader.finance.execution import LimitOrder
+
+# TODO: Move to pipeline once PR is merged https://github.com/alpacahq/pipeline-live/pull/6
+# from pipeline_live.data.polygon.filters import StaticSymbols
+import numpy as np
+from zipline.pipeline.filters import CustomFilter
+class StaticSymbols(CustomFilter):
+    inputs = ()
+    window_length = 1
+    params = ('symbols',)
+
+    def compute(self, today, assets, out, symbols, *inputs):
+        ary = np.array([symbol in symbols for symbol in assets])
+        out[:] = ary
+# END TODO
 
 from math import floor
 

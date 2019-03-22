@@ -5,12 +5,6 @@ ARG USE_REDIS=1
 ENV USE_REDIS=$USE_REDIS
 RUN bash -c 'if [ "$USE_REDIS" == 1 ] ; then pip install redis ; fi'
 
-RUN git clone --depth 1 https://github.com/trobrock/pipeline-live.git --branch master --single-branch && \
-    pip uninstall -y pipeline-live && \
-    cd pipeline-live && \
-    python setup.py install && \
-    cd .. && rm -rf pipeline-live
-
 ARG ALGO
 ARG APCA_API_SECRET_KEY
 ARG APCA_API_KEY_ID
