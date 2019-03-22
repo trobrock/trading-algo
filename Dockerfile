@@ -29,7 +29,7 @@ ADD run /app
 
 WORKDIR /app
 
-RUN adduser -D tradealgo
+RUN adduser --disabled-password tradealgo
 USER tradealgo
 
 CMD ./run $ALGO
