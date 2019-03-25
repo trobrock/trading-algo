@@ -124,11 +124,11 @@ def before_trading_start(context, data):
     #     return
 
     pipe_results = pipeline_output('my_pipeline')
-    log.info(pipe_results['longs'])
-    log.info(pipe_results[pipe_results['longs']].index)
 
     context.longs = []
     for sec in pipe_results[pipe_results['longs']].index.tolist():
+        log.info(sec)
+        log.info(data.can_trade(sec))
         if data.can_trade(sec):
             context.longs.append(sec)
 
