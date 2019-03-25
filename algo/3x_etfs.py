@@ -119,12 +119,13 @@ def before_trading_start(context, data):
     # https://docs.alpaca.markets/platform-migration/zipline-to-pylivetrader/#deal-with-restart
     today = get_datetime().floor('1D')
     last_date = getattr(context, 'last_date', None)
-    if today == last_date:
-        log.info("Skipping before_trading_start because it's already ran today")
-        return
+    # if today == last_date:
+    #     log.info("Skipping before_trading_start because it's already ran today")
+    #     return
 
     pipe_results = pipeline_output('my_pipeline')
-    log.info(pipe_results)
+    log.info(pipe_results['longs'])
+    log.info(pipe_results[pipe_results['longs']].index)
 
     context.longs = []
     for sec in pipe_results[pipe_results['longs']].index.tolist():
