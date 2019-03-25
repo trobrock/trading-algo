@@ -41,7 +41,7 @@ def initialize(context):
     context.ALLOW_SHORT = False
     # False => 754% on $1000 12/31/2016 => 10/31/2018
 
-    schedule_function(my_rebalance, date_rules.every_day(), time_rules.market_open(minutes=5))
+    schedule_function(my_rebalance, date_rules.every_day(), time_rules.market_open())
     schedule_function(my_record_vars, date_rules.every_day(), time_rules.market_close())
 
     my_pipe = make_pipeline()
@@ -87,6 +87,7 @@ def make_pipeline():
 def compute_target_weights(context, data):
     weights = {}
 
+    log.info(context.longs)
     if context.longs and context.shorts:
         if context.ALLOW_SHORT:
             long_total = 0.5
@@ -140,7 +141,6 @@ def before_trading_start(context, data):
 
 def my_rebalance(context, data):
     target_weights = compute_target_weights(context, data)
-    log.info(target_weights)
 
     if target_weights:
         portfolio_value = context.portfolio.portfolio_value
@@ -173,6 +173,9 @@ def my_record_vars(context, data):
     )
 
 def handle_data(context, data):
+    target_weights = compute_target_weights(context, data)
+    log.info(target_weights)
+
     for stock, position in context.portfolio.positions.items():
         if get_open_orders(stock):
             continue
