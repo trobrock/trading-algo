@@ -41,7 +41,7 @@ def initialize(context):
     context.ALLOW_SHORT = False
     # False => 754% on $1000 12/31/2016 => 10/31/2018
 
-    schedule_function(my_rebalance, date_rules.every_day(), time_rules.market_open())
+    schedule_function(my_rebalance, date_rules.every_day(), time_rules.market_open(minutes=22))
     schedule_function(my_record_vars, date_rules.every_day(), time_rules.market_close())
 
     my_pipe = make_pipeline()
@@ -119,16 +119,14 @@ def before_trading_start(context, data):
     # https://docs.alpaca.markets/platform-migration/zipline-to-pylivetrader/#deal-with-restart
     today = get_datetime().floor('1D')
     last_date = getattr(context, 'last_date', None)
-    # if today == last_date:
-    #     log.info("Skipping before_trading_start because it's already ran today")
-    #     return
+    if today == last_date:
+        log.info("Skipping before_trading_start because it's already ran today")
+        return
 
     pipe_results = pipeline_output('my_pipeline')
 
     context.longs = []
     for sec in pipe_results[pipe_results['longs']].index.tolist():
-        log.info(sec)
-        log.info(data.can_trade(sec))
         if data.can_trade(sec):
             context.longs.append(sec)
 
@@ -174,9 +172,6 @@ def my_record_vars(context, data):
     )
 
 def handle_data(context, data):
-    target_weights = compute_target_weights(context, data)
-    log.info(target_weights)
-
     for stock, position in context.portfolio.positions.items():
         if get_open_orders(stock):
             continue
