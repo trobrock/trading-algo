@@ -159,7 +159,7 @@ def my_rebalance(context, data):
 
 def my_record_vars(context, data):
     longs = shorts = 0
-    for position in context.portfolio.positions.itervalues():
+    for position in iter(context.portfolio.positions.values()):
         if position.amount > 0:
             longs += 1
         elif position.amount < 0:
