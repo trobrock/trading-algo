@@ -140,6 +140,7 @@ def before_trading_start(context, data):
 
 def my_rebalance(context, data):
     target_weights = compute_target_weights(context, data)
+    log.info(target_weights)
 
     if target_weights:
         portfolio_value = context.portfolio.portfolio_value
