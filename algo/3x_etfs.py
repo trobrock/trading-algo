@@ -41,7 +41,7 @@ def initialize(context):
     context.ALLOW_SHORT = False
     # False => 754% on $1000 12/31/2016 => 10/31/2018
 
-    schedule_function(my_rebalance, date_rules.every_day(), time_rules.market_open(minutes=10))
+    schedule_function(my_rebalance, date_rules.every_day(), time_rules.market_open(minutes=15))
     schedule_function(my_record_vars, date_rules.every_day(), time_rules.market_close())
 
     my_pipe = make_pipeline()
@@ -101,7 +101,7 @@ def compute_target_weights(context, data):
         return weights
 
     for security in context.portfolio.positions:
-        if security not in context.longs and security not in context.shorts and data.can_trade(security):
+        if security not in context.longs and security not in context.shorts:
             weights[security] = 0
 
     for security in context.longs:
@@ -120,20 +120,18 @@ def before_trading_start(context, data):
     last_date = getattr(context, 'last_date', None)
     if today == last_date:
         log.info("Skipping before_trading_start because it's already ran today")
-        return
+        # return
 
     pipe_results = pipeline_output('my_pipeline')
     log.info(pipe_results)
 
     context.longs = []
     for sec in pipe_results[pipe_results['longs']].index.tolist():
-        if data.can_trade(sec):
-            context.longs.append(sec)
+        context.longs.append(sec)
 
     context.shorts = []
     for sec in pipe_results[pipe_results['shorts']].index.tolist():
-        if data.can_trade(sec):
-            context.shorts.append(sec)
+        context.shorts.append(sec)
 
     # Track the last run
     context.last_date = today
