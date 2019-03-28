@@ -41,7 +41,7 @@ def initialize(context):
     context.ALLOW_SHORT = False
     # False => 754% on $1000 12/31/2016 => 10/31/2018
 
-    schedule_function(my_rebalance, date_rules.every_day(), time_rules.market_open())
+    schedule_function(my_rebalance, date_rules.every_day(), time_rules.market_open(minutes=10))
     schedule_function(my_record_vars, date_rules.every_day(), time_rules.market_close())
 
     my_pipe = make_pipeline()
