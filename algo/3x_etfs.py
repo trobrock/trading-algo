@@ -172,7 +172,7 @@ def my_record_vars(context, data):
 def handle_data(context, data):
     today = get_datetime().floor('1D')
     last_date = getattr(context, 'last_ran_buy', None)
-    if today == last_date:
+    if today != last_date:
         my_rebalance(context, data)
         context.last_ran_buy = today
     else:
