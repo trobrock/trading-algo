@@ -113,6 +113,7 @@ def compute_target_weights(context, data):
 
 def before_trading_start(context, data):
     log.info("RUNNING before_trading_start")
+    log.info(context)
     # Prevent running more than once a day:
     # https://docs.alpaca.markets/platform-migration/zipline-to-pylivetrader/#deal-with-restart
     today = get_datetime().floor('1D')
