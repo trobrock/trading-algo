@@ -41,7 +41,6 @@ def initialize(context):
     context.ALLOW_SHORT = False
     # False => 754% on $1000 12/31/2016 => 10/31/2018
 
-    schedule_function(my_rebalance, date_rules.every_day(), time_rules.market_open(minutes=15))
     schedule_function(my_record_vars, date_rules.every_day(), time_rules.market_close())
 
     my_pipe = make_pipeline()
@@ -120,7 +119,7 @@ def before_trading_start(context, data):
     last_date = getattr(context, 'last_date', None)
     if today == last_date:
         log.info("Skipping before_trading_start because it's already ran today")
-        # return
+        return
 
     pipe_results = pipeline_output('my_pipeline')
     log.info(pipe_results)
@@ -171,15 +170,21 @@ def my_record_vars(context, data):
     )
 
 def handle_data(context, data):
-    for stock, position in context.portfolio.positions.items():
-        if get_open_orders(stock):
-            continue
+    today = get_datetime().floor('1D')
+    last_date = getattr(context, 'last_ran_buy', None)
+    if today == last_date:
+        my_rebalance(context, data)
+        context.last_ran_buy = today
+    else:
+        for stock, position in context.portfolio.positions.items():
+            if get_open_orders(stock):
+                continue
 
-        current_price = data.current(stock, 'price')
-        cost_basis = position.cost_basis
-        stop_loss = -0.05
-        current_loss = (current_price - cost_basis) / cost_basis
+            current_price = data.current(stock, 'price')
+            cost_basis = position.cost_basis
+            stop_loss = -0.05
+            current_loss = (current_price - cost_basis) / cost_basis
 
-        if current_loss < stop_loss:
-            log.info('selling early %s (%.2f)' % (stock.symbol, current_loss))
-            order(stock, position.amount * -1)
+            if current_loss < stop_loss:
+                log.info('selling early %s (%.2f)' % (stock.symbol, current_loss))
+                order(stock, position.amount * -1)
