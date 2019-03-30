@@ -6,7 +6,7 @@ from pylivetrader.api import (
                              get_datetime,
                              pipeline_output,
                              get_open_orders,
-                             order,
+                             order_target_percent,
                              cancel_order,
                              symbols
                              )
@@ -83,15 +83,15 @@ def make_pipeline():
         screen=base_universe
     )
 
-def compute_target_weights(context, data):
+def compute_target_weights(context, data, margin):
     weights = {}
 
     if context.longs and context.shorts:
         if context.ALLOW_SHORT:
-            long_total = 0.5
-            short_total = -0.5
+            long_total = 0.5 * margin
+            short_total = -0.5 * margin
         else:
-            long_total = 1.0
+            long_total = 1.0 * margin
             short_total = 0.0
 
         long_weight = long_total / len(context.longs)
@@ -136,24 +136,13 @@ def before_trading_start(context, data):
     context.last_date = today
 
 def my_rebalance(context, data):
-    target_weights = compute_target_weights(context, data)
+    target_weights = compute_target_weights(context, data, 1)
     log.info(target_weights)
 
     if target_weights:
-        portfolio_value = context.portfolio.portfolio_value
-
         for stock, weight in target_weights.items():
             current_price = data.current(stock, 'price')
-            target_amount = floor((portfolio_value * weight) / current_price)
-
-            if stock in context.portfolio.positions:
-                current_amount = context.portfolio.positions[stock].amount
-            else:
-                current_amount = 0
-
-            diff = target_amount - current_amount
-
-            order(stock, diff, style=LimitOrder(current_price))
+            order_target_percent(stock, weight, style=LimitOrder(current_price))
 
 def my_record_vars(context, data):
     longs = shorts = 0
@@ -187,4 +176,4 @@ def handle_data(context, data):
 
             if current_loss < stop_loss:
                 log.info('selling early %s (%.2f)' % (stock.symbol, current_loss))
-                order(stock, position.amount * -1)
+                order_target_percent(stock, 0)
