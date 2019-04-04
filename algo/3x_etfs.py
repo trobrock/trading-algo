@@ -141,8 +141,7 @@ def my_rebalance(context, data):
 
     if target_weights:
         for stock, weight in target_weights.items():
-            current_price = data.current(stock, 'price')
-            order_target_percent(stock, weight, style=LimitOrder(current_price))
+            order_target_percent(stock, weight)
 
 def my_record_vars(context, data):
     longs = shorts = 0
