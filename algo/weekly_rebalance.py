@@ -22,7 +22,7 @@ def record(*args, **kwargs):
 def initialize(context):
     """Sets up the context"""
     context.stocks = {
-        symbol("TPY"): 0.1,
+        symbol("TYD"): 0.1,
         symbol("TMF"): 0.2,
         symbol("SPXL"): 0.5,
         symbol("VNQ"): 0.2,
