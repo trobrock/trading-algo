@@ -29,7 +29,7 @@ def initialize(context):
     }
 
     schedule_function(
-        rebalance, date_rules.week_end(), time_rules.market_open(minutes=11)
+        rebalance, date_rules.week_start(), time_rules.market_open(minutes=11)
     )
 
 
