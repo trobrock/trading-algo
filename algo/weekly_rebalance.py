@@ -25,20 +25,13 @@ def initialize(context):
     context.stocks = {
         symbol("TYD"): 0.1,
         symbol("TMF"): 0.2,
-        symbol("SPXL"): 0.5,
-        symbol("VNQ"): 0.2,
+        symbol("SPXL"): 0.35,
+        symbol("VYM"): 0.35,
     }
 
     schedule_function(
         rebalance, date_rules.week_start(), time_rules.market_open(minutes=11)
     )
-
-
-def handle_data(context, data):
-    first_run_complete = getattr(context, "first_run_complete", False)
-    if not first_run_complete:
-        rebalance(context, data)
-        context.first_run_complete = True
 
 
 def rebalance(context, data):
