@@ -29,7 +29,7 @@ def initialize(context):
     }
 
     schedule_function(
-        rebalance, date_rules.week_start(), time_rules.market_open(minutes=11)
+        rebalance, date_rules.week_start(days_offset=1), time_rules.market_open(minutes=11)
     )
 
 
@@ -38,7 +38,7 @@ def rebalance(context, data):
 
     for stock, weight in context.stocks.items():
         if data.can_trade(stock) and not get_open_orders(stock):
-            prices = data.history(stock, "price", bar_count=300, frequency="1d")
+            prices = data.history(stock, "price", bar_count=200, frequency="1d")
             if should_buy(prices):
                 order_target_percent(stock, weight)
             elif should_sell(prices):
