@@ -10,6 +10,7 @@ from pylivetrader.api import (
 )
 import talib
 import logbook
+import requests
 
 LOG = logbook.Logger("algo")
 
@@ -29,7 +30,9 @@ def initialize(context):
     }
 
     schedule_function(
-        rebalance, date_rules.week_start(days_offset=1), time_rules.market_open(minutes=11)
+        rebalance,
+        date_rules.week_start(days_offset=1),
+        time_rules.market_open(minutes=11),
     )
 
 
@@ -38,11 +41,22 @@ def rebalance(context, data):
 
     for stock, weight in context.stocks.items():
         if data.can_trade(stock) and not get_open_orders(stock):
-            prices = data.history(stock, "price", bar_count=200, frequency="1d")
+            prices = get_prices(stock, data)
             if should_buy(prices):
                 order_target_percent(stock, weight)
             elif should_sell(prices):
                 order_target_percent(stock, 0)
+
+
+def get_prices(stock, data):
+    for i in range(5):
+        try:
+            return data.history(stock, "price", bar_count=200, frequency="1d")
+        except requests.exceptions.HTTPError:
+            if i < 3 - 1:
+                continue
+            else:
+                raise
 
 
 def should_buy(prices):
