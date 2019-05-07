@@ -29,11 +29,13 @@ def initialize(context):
         symbol("VNQ"): 0.2,
     }
 
-    schedule_function(
-        rebalance,
-        date_rules.week_start(days_offset=1),
-        time_rules.market_open(minutes=11),
-    )
+    # schedule_function(
+    #     rebalance,
+    #     date_rules.week_start(),
+    #     time_rules.market_open(minutes=11),
+    # )
+
+    schedule_function(rebalance, date_rules.every_day(), time_rules.market_open(hours=1))
 
 
 def rebalance(context, data):
