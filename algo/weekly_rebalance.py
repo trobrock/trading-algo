@@ -35,7 +35,9 @@ def initialize(context):
     #     time_rules.market_open(minutes=11),
     # )
 
-    schedule_function(rebalance, date_rules.every_day(), time_rules.market_open(hours=1))
+    schedule_function(
+        rebalance, date_rules.every_day(), time_rules.market_open(hours=1, minutes=10)
+    )
 
 
 def rebalance(context, data):
