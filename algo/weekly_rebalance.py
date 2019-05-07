@@ -29,16 +29,17 @@ def initialize(context):
         symbol("VNQ"): 0.2,
     }
 
-    # schedule_function(
-    #     rebalance,
-    #     date_rules.week_start(),
-    #     time_rules.market_open(minutes=11),
-    # )
-
     schedule_function(
-        rebalance, date_rules.every_day(), time_rules.market_open(hours=1)
+        rebalance,
+        date_rules.week_start(),
+        time_rules.market_open(minutes=11),
     )
 
+
+def handle_data(context, data):
+    if 'first_run_complete' not in context:
+        rebalance(context, data)
+        context.first_run_complete = True
 
 def rebalance(context, data):
     """Rebalance the portfolio based on context.stocks"""
