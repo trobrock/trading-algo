@@ -35,7 +35,7 @@ def initialize(context):
 
 
 def handle_data(context, data):
-    first_run_complete = getattr(context, "last_ran_buy", False)
+    first_run_complete = getattr(context, "first_run_complete", False)
     if not first_run_complete:
         rebalance(context, data)
         context.first_run_complete = True
@@ -44,6 +44,7 @@ def handle_data(context, data):
 def rebalance(context, data):
     """Rebalance the portfolio based on context.stocks"""
 
+    LOG.info('rebalancing')
     for stock, weight in context.stocks.items():
         if not get_open_orders(stock):
             prices = get_prices(stock, data)
