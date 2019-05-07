@@ -48,8 +48,10 @@ def rebalance(context, data):
         if data.can_trade(stock) and not get_open_orders(stock):
             prices = get_prices(stock, data)
             if should_buy(prices):
+                LOG.info("BUY %s: %s" % (stock.symbol, calculate(prices)))
                 order_target_percent(stock, weight)
             elif should_sell(prices):
+                LOG.info("SELL %s: %s" % (stock.symbol, calculate(prices)))
                 order_target_percent(stock, 0)
 
 
