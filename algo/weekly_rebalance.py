@@ -45,8 +45,9 @@ def rebalance(context, data):
     """Rebalance the portfolio based on context.stocks"""
 
     for stock, weight in context.stocks.items():
-        if data.can_trade(stock) and not get_open_orders(stock):
+        if not get_open_orders(stock):
             prices = get_prices(stock, data)
+            LOG.info("checking buy or sell on %s" % stock.symbol)
             if should_buy(prices):
                 LOG.info("BUY %s: %s" % (stock.symbol, calculate(prices)))
                 order_target_percent(stock, weight)
