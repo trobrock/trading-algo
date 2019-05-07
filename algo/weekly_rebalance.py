@@ -23,10 +23,9 @@ def record(*args, **kwargs):
 def initialize(context):
     """Sets up the context"""
     context.stocks = {
-        symbol("TYD"): 0.1,
+        symbol("TYD"): 0.2,
         symbol("TMF"): 0.2,
-        symbol("SPXL"): 0.35,
-        symbol("VYM"): 0.35,
+        symbol("SPXL"): 0.6,
     }
 
     schedule_function(
@@ -37,7 +36,7 @@ def initialize(context):
 def rebalance(context, data):
     """Rebalance the portfolio based on context.stocks"""
 
-    LOG.info('rebalancing')
+    LOG.info("rebalancing")
     for stock, weight in context.stocks.items():
         if not get_open_orders(stock):
             order_target_percent(stock, weight)
