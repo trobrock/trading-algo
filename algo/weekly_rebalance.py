@@ -30,16 +30,16 @@ def initialize(context):
     }
 
     schedule_function(
-        rebalance,
-        date_rules.week_start(),
-        time_rules.market_open(minutes=11),
+        rebalance, date_rules.week_start(), time_rules.market_open(minutes=11)
     )
 
 
 def handle_data(context, data):
-    if 'first_run_complete' not in context:
+    first_run_complete = getattr(context, "last_ran_buy", False)
+    if not first_run_complete:
         rebalance(context, data)
         context.first_run_complete = True
+
 
 def rebalance(context, data):
     """Rebalance the portfolio based on context.stocks"""
