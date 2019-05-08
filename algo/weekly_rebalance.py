@@ -36,8 +36,7 @@ def rebalance(context, data):
     """Rebalance the portfolio based on context.stocks"""
 
     LOG.info("cancelling open orders")
-    for order in get_open_orders():
-        cancel_order(order)
+    cancel_all_orders(context, data)
 
     for stock in context.portfolio.positions:
         if stock not in context.stocks:
@@ -55,3 +54,9 @@ def rebalance(context, data):
         order_target_percent(
             stock, weight * context.target_leverage, style=LimitOrder(limit)
         )
+
+
+def cancel_all_orders(context, data):
+    for _stock, orders in get_open_orders().items():
+        for order in orders:
+            cancel_order(order)
