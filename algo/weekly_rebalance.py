@@ -23,7 +23,7 @@ def record(*args, **kwargs):
 
 def initialize(context):
     """Sets up the context"""
-    context.stocks = {symbol("TYD"): 0.2, symbol("TMF"): 0.2, symbol("SPXL"): 0.6}
+    context.stocks = {symbol("TMF"): 0.2, symbol("UJB"): 0.2, symbol("TQQQ"): 0.6}
 
     context.target_leverage = 1
 
@@ -38,6 +38,14 @@ def rebalance(context, data):
     LOG.info("cancelling open orders")
     for order in get_open_orders():
         cancel_order(order)
+
+    for stock in context.portfolio.positions:
+        if stock not in context.stocks:
+            LOG.info(
+                "selling stock %s that should no longer be in the portfolio"
+                % stock.symbol
+            )
+            order_target_percent(stock, 0)
 
     LOG.info("rebalancing")
     for stock, weight in context.stocks.items():
