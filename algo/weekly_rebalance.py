@@ -4,7 +4,7 @@ from pylivetrader.api import (
     time_rules,
     get_datetime,
     get_open_orders,
-    order_target_percent,
+    order,
     cancel_order,
     symbol,
 )
@@ -12,6 +12,7 @@ from pylivetrader.finance.execution import LimitOrder
 import talib
 import logbook
 import requests
+from math import floor
 
 LOG = logbook.Logger("algo")
 
@@ -38,6 +39,29 @@ def rebalance(context, data):
     LOG.info("cancelling open orders")
     cancel_all_orders(context, data)
 
+    sell_stocks_not_in_portfolio(context, data)
+
+    LOG.info("rebalancing")
+    LOG.info(context.stocks)
+    totals = calculate_totals(context, data)
+    LOG.info("totals calculated: %s" % totals)
+    for stock, info in totals:
+        order(stock, info["total"], style=LimitOrder(info["price"]))
+
+
+def calculate_totals(context, data):
+    totals = {}
+    for stock, weight in context.stocks.items():
+        price = data.current(stock, "price")
+        limit = price + (price * 0.01)
+        weight *= context.target_leverage
+        total = floor((weight * context.portfolio.portfolio_balance) / limit)
+        totals[stock] = {"total": total, "price": limit}
+
+    return totals
+
+
+def sell_stocks_not_in_portfolio(context, data):
     for stock in context.portfolio.positions:
         if stock not in context.stocks:
             LOG.info(
@@ -45,15 +69,6 @@ def rebalance(context, data):
                 % stock.symbol
             )
             order_target_percent(stock, 0)
-
-    LOG.info("rebalancing")
-    for stock, weight in context.stocks.items():
-        LOG.info("%s: %.2f percent" % (stock.symbol, weight * 100))
-        price = data.current(stock, "price")
-        limit = price + (price * 0.01)
-        order_target_percent(
-            stock, weight * context.target_leverage, style=LimitOrder(limit)
-        )
 
 
 def cancel_all_orders(context, data):
