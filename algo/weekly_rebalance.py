@@ -55,7 +55,7 @@ def calculate_totals(context, data):
         price = data.current(stock, "price")
         limit = price + (price * 0.01)
         weight *= context.target_leverage
-        total = floor((weight * context.portfolio.portfolio_balance) / limit)
+        total = floor((weight * context.account.portfolio_balance) / limit)
         totals[stock] = {"total": total, "price": limit}
 
     return totals
