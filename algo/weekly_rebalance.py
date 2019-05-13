@@ -42,12 +42,13 @@ def determine_market_direction(context, data):
     history = data.history(symbol("QQQ"), fields="price", bar_count=390, frequency="1d")
     slow_ema = talib.EMA(history, 90)
     slow_sma = talib.SMA(history, 100)
+    diff = (slow_ema - slow_sma)[-1]
 
     if (slow_ema - slow_sma)[-1] >= -2:
-        LOG.info("market is up")
+        LOG.info("market is up %0.4f" % diff)
         context.direction = 1
     else:
-        LOG.info("market is down")
+        LOG.info("market is down %0.4f" % diff)
         context.direction = -1
 
 
