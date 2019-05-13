@@ -45,7 +45,7 @@ def rebalance(context, data):
     LOG.info(context.stocks)
     totals = calculate_totals(context, data)
     LOG.info("totals calculated: %s" % totals)
-    for stock, info in totals:
+    for stock, info in totals.items():
         order(stock, info["total"], style=LimitOrder(info["price"]))
 
 
@@ -55,7 +55,7 @@ def calculate_totals(context, data):
         price = data.current(stock, "price")
         limit = price + (price * 0.01)
         weight *= context.target_leverage
-        total = floor((weight * context.account.portfolio_balance) / limit)
+        total = floor((weight * context.portfolio.portfolio_value) / limit)
         totals[stock] = {"total": total, "price": limit}
 
     return totals
