@@ -1,3 +1,4 @@
+from math import floor
 from pylivetrader.api import (
     schedule_function,
     date_rules,
@@ -5,14 +6,13 @@ from pylivetrader.api import (
     get_datetime,
     get_open_orders,
     order,
+    order_target_percent,
     cancel_order,
     symbol,
 )
 from pylivetrader.finance.execution import LimitOrder
 import talib
 import logbook
-import requests
-from math import floor
 
 LOG = logbook.Logger("algo")
 
@@ -33,12 +33,35 @@ def initialize(context):
     )
 
 
+def before_trading_start(context, data):
+    determine_market_direction(context, data)
+    set_portfolio(context, data)
+
+
+def determine_market_direction(context, data):
+    history = data.history(symbol("QQQ"), fields="price", bar_count=390, frequency="1d")
+    slow_ema = talib.EMA(history, 90)
+    slow_sma = talib.SMA(history, 100)
+
+    if (slow_ema - slow_sma)[-1] >= -2:
+        LOG.info("market is up")
+        context.direction = 1
+    else:
+        LOG.info("market is down")
+        context.direction = -1
+
+
+def set_portfolio(context, data):
+    if context.direction == 1:
+        context.stocks = {symbol("TMF"): 0.2, symbol("UJB"): 0.2, symbol("TQQQ"): 0.6}
+    else:
+        context.stocks = {symbol("TMF"): 0.2, symbol("UJB"): 0.2, symbol("XLU"): 0.6}
+
+
 def rebalance(context, data):
     """Rebalance the portfolio based on context.stocks"""
 
-    LOG.info("cancelling open orders")
     cancel_all_orders(context, data)
-
     sell_stocks_not_in_portfolio(context, data)
 
     LOG.info("rebalancing")
@@ -56,7 +79,11 @@ def calculate_totals(context, data):
         limit = price + (price * 0.01)
         weight *= context.target_leverage
         total = floor((weight * context.portfolio.portfolio_value) / limit)
-        totals[stock] = {"total": total, "price": limit}
+        if stock in context.portfolio.positions:
+            current = context.portfolio.positions[stock].amount
+        else:
+            current = 0
+        totals[stock] = {"total": total - current, "price": limit}
 
     return totals
 
@@ -73,5 +100,5 @@ def sell_stocks_not_in_portfolio(context, data):
 
 def cancel_all_orders(context, data):
     for _stock, orders in get_open_orders().items():
-        for order in orders:
-            cancel_order(order)
+        for pending_order in orders:
+            cancel_order(pending_order)
