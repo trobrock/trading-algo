@@ -82,7 +82,7 @@ def calculate_totals(context, data):
             # This is a workaround a potential bug when a stock hasn't traded yet.
             # https://alpaca-community.slack.com/archives/CD8AHKL5A/p1557842432029800
             price = data.history(stock, "price", bar_count=1, frequency="1d")
-        limit = price + (price * 0.01)
+        limit = round(price + (price * 0.01), 2)
         weight *= context.target_leverage
         total = floor((weight * context.portfolio.portfolio_value) / limit)
         if stock in context.portfolio.positions:
