@@ -1,4 +1,4 @@
-FROM alpacamarkets/pylivetrader:0.0.28
+FROM alpacamarkets/pylivetrader:0.0.29
 
 # Change to 0 to disable the installation of the redis library
 ARG USE_REDIS=1
