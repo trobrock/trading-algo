@@ -1,4 +1,4 @@
-from math import floor
+from math import floor, isnan
 from pylivetrader.api import (
     schedule_function,
     date_rules,
@@ -77,6 +77,8 @@ def calculate_totals(context, data):
     totals = {}
     for stock, weight in context.stocks.items():
         price = data.current(stock, "price")
+        if isnan(price):
+            price = data.history(stock, "price", bar_count=1, frequency="1d")
         limit = round(price + (price * 0.01), 2)
         weight *= context.target_leverage
         total = floor((weight * context.portfolio.portfolio_value) / limit)
