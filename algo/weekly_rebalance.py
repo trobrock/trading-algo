@@ -78,7 +78,8 @@ def calculate_totals(context, data):
     for stock, weight in context.stocks.items():
         price = data.current(stock, "price")
         if isnan(price):
-            price = data.history(stock, "price", bar_count=1, frequency="1d")
+            # Pull the last week of minut data and use the last "price" for sparsely traded stocks
+            price = data.history(stock, "price", bar_count=3360, frequency="1m")[-1]
         limit = round(price + (price * 0.01), 2)
         weight *= context.target_leverage
         total = floor((weight * context.portfolio.portfolio_value) / limit)
