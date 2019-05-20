@@ -70,7 +70,7 @@ def rebalance(context, data):
     totals = calculate_totals(context, data)
     LOG.info("totals calculated: %s" % totals)
     for stock, info in totals.items():
-        order(stock, info["total"], style=LimitOrder(info["price"]))
+        order(stock, info["total"])
 
 
 def calculate_totals(context, data):
@@ -80,14 +80,13 @@ def calculate_totals(context, data):
         if isnan(price):
             # Pull the last week of minut data and use the last "price" for sparsely traded stocks
             price = data.history(stock, "price", bar_count=3360, frequency="1m")[-1]
-        limit = price
         weight *= context.target_leverage
-        total = floor((weight * context.portfolio.portfolio_value) / limit)
+        total = floor((weight * context.portfolio.portfolio_value) / price)
         if stock in context.portfolio.positions:
             current = context.portfolio.positions[stock].amount
         else:
             current = 0
-        totals[stock] = {"total": total - current, "price": limit}
+        totals[stock] = {"total": total - current, "price": price}
 
     return totals
 
