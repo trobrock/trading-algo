@@ -80,7 +80,7 @@ def calculate_totals(context, data):
         if isnan(price):
             # Pull the last week of minut data and use the last "price" for sparsely traded stocks
             price = data.history(stock, "price", bar_count=3360, frequency="1m")[-1]
-        limit = round(price + (price * 0.01), 2)
+        limit = price
         weight *= context.target_leverage
         total = floor((weight * context.portfolio.portfolio_value) / limit)
         if stock in context.portfolio.positions:
