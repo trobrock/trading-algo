@@ -40,23 +40,21 @@ def before_trading_start(context, data):
 
 def determine_market_direction(context, data):
     history = data.history(symbol("QQQ"), fields="price", bar_count=390, frequency="1d")
-    slow_ema = talib.EMA(history, 90)
-    slow_sma = talib.SMA(history, 100)
-    diff = (slow_ema - slow_sma)[-1]
+    long_ma = talib.SMA(history, 200)
 
-    if (slow_ema - slow_sma)[-1] >= -2:
-        LOG.info("market is up %0.4f" % diff)
+    if long_ma[-1] < history[-1]:
+        LOG.info("market is up")
         context.direction = 1
     else:
-        LOG.info("market is down %0.4f" % diff)
+        LOG.info("market is down")
         context.direction = -1
 
 
 def set_portfolio(context, data):
     if context.direction == 1:
-        context.stocks = {symbol("TMF"): 0.2, symbol("UJB"): 0.2, symbol("TQQQ"): 0.6}
+        context.stocks = {symbol("TMF"): 0.2, symbol("TYD"): 0.2, symbol("TQQQ"): 0.6}
     else:
-        context.stocks = {symbol("TMF"): 0.2, symbol("UJB"): 0.2, symbol("XLU"): 0.6}
+        context.stocks = {symbol("TQQQ"): 1}
 
 
 def rebalance(context, data):
