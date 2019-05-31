@@ -25,7 +25,7 @@ def initialize(context):
     context.target_leverage = 1
 
     schedule_function(
-        rebalance, date_rules.every_day(), time_rules.market_open(hours=2)
+        rebalance, date_rules.every_day(), time_rules.market_open(hours=2, minutes=20)
     )
     schedule_function(record_vars, date_rules.every_day(), time_rules.market_close())
 
