@@ -32,13 +32,19 @@ def initialize(context):
 
 def rebalance(context, data):
     stocks = {
-        symbol("QQQ"): 0.3,
-        symbol("AMZN"): 0.2,
-        symbol("PXMG"): 0.1,
-        symbol("UUP"): 0.1,
+        symbol("QQQ"): 0.35,
+        symbol("PXMG"): 0.15,
+        symbol("UUP"): 0.15,
         symbol("EDV"): 0.2,
-        symbol("REZ"): 0.1,
+        symbol("REZ"): 0.15,
     }
+
+    for asset in context.portfolio.positions:
+        if asset not in stocks:
+            LOG.info(
+                "selling %s because it's no longer in the portfolio" % asset.symbol
+            )
+            order_target_percent(asset, 0)
 
     for asset, allocation in stocks.items():
         order_target_percent(asset, allocation * context.target_leverage)
