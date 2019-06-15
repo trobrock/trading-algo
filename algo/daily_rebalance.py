@@ -47,7 +47,8 @@ def rebalance(context, data):
             order_target_percent(asset, 0)
 
     for asset, allocation in stocks.items():
-        order_target_percent(asset, allocation * context.target_leverage)
+        if data.can_trade(asset):
+            order_target_percent(asset, allocation * context.target_leverage)
 
 
 def record_vars(context, data):
