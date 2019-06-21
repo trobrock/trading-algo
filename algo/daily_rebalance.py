@@ -39,6 +39,7 @@ def rebalance(context, data):
         symbol("REZ"): 0.15,
     }
 
+    LOG.info("rebalancing...")
     for asset in context.portfolio.positions:
         if asset not in stocks:
             LOG.info(
@@ -48,7 +49,13 @@ def rebalance(context, data):
 
     for asset, allocation in stocks.items():
         if data.can_trade(asset):
+            allocation *= context.target_leverage
+            LOG.info("orderering %.2f of %s" % (allocation, asset.symbol))
             order_target_percent(asset, allocation * context.target_leverage)
+        else:
+            LOG.info("cannot trade %s" % (asset.symbol))
+
+    LOG.info("done rebalancing")
 
 
 def record_vars(context, data):
