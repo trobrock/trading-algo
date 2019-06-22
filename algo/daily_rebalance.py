@@ -33,7 +33,7 @@ def initialize(context):
 def rebalance(context, data):
     stocks = {
         symbol("QQQ"): 0.35,
-        symbol("PXMG"): 0.15,
+        symbol("XMMO"): 0.15,
         symbol("UUP"): 0.15,
         symbol("EDV"): 0.2,
         symbol("REZ"): 0.15,
