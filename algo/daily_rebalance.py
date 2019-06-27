@@ -22,7 +22,7 @@ def record(*args, **kwargs):
 
 def initialize(context):
     """Sets up the context"""
-    context.target_leverage = 1
+    context.target_leverage = 3
 
     schedule_function(
         rebalance, date_rules.every_day(), time_rules.market_open(hours=2, minutes=20)
