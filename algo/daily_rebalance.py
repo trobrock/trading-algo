@@ -22,6 +22,7 @@ def record(*args, **kwargs):
 
 def initialize(context):
     """Sets up the context"""
+    context.leverage_usable = 4
     context.target_leverage = 3
 
     schedule_function(
@@ -49,6 +50,7 @@ def rebalance(context, data):
 
     for asset, allocation in stocks.items():
         if data.can_trade(asset):
+            allocation *= context.leverage_usable
             allocation *= context.target_leverage
             LOG.info("orderering %.2f of %s" % (allocation, asset.symbol))
             order_target_percent(asset, allocation * context.target_leverage)
