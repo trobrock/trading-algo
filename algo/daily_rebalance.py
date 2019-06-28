@@ -49,13 +49,13 @@ def rebalance(context, data):
             order_target_percent(asset, 0)
 
     for asset, allocation in stocks.items():
-        if data.can_trade(asset):
+        try:
             allocation *= context.leverage_usable
             allocation *= context.target_leverage
             LOG.info("orderering %.2f of %s" % (allocation, asset.symbol))
             order_target_percent(asset, allocation * context.target_leverage)
-        else:
-            LOG.info("cannot trade %s" % (asset.symbol))
+        except Exception as e:
+            LOG.info("exception: " % e)
 
     LOG.info("done rebalancing")
 
