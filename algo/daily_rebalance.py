@@ -26,7 +26,7 @@ def initialize(context):
     context.target_leverage = 3
 
     schedule_function(
-        rebalance, date_rules.every_day(), time_rules.market_open(hours=5, minutes=15)
+        rebalance, date_rules.every_day(), time_rules.market_open(hours=5, minutes=30)
     )
     schedule_function(record_vars, date_rules.every_day(), time_rules.market_close())
 
@@ -55,7 +55,7 @@ def rebalance(context, data):
             LOG.info("orderering %.2f of %s" % (allocation, asset.symbol))
             order_target_percent(asset, allocation * context.target_leverage)
         except Exception as e:
-            LOG.info("exception: " % str(e))
+            print(e)
 
     LOG.info("done rebalancing")
 
