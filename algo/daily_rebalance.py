@@ -14,7 +14,6 @@ from pylivetrader.api import (
 import logbook
 
 LOG = logbook.Logger("algo")
-LEVERAGE_USABLE = 4
 
 
 def record(*args, **kwargs):
@@ -53,17 +52,11 @@ def rebalance(context, data):
         try:
             allocation *= context.target_leverage
             LOG.info("orderering %.2f of %s" % (allocation, asset.symbol))
-            order_percent(asset, allocation * context.target_leverage)
+            order_target_percent(asset, allocation * context.target_leverage)
         except Exception as e:
             print(e)
 
     LOG.info("done rebalancing")
-
-
-def order_percent(asset, allocation):
-    modifier = 1.0 / LEVERAGE_USABLE
-
-    order_target_percent(asset, allocation * modifier)
 
 
 def record_vars(context, data):
