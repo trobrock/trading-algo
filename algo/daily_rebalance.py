@@ -55,6 +55,7 @@ def rebalance(context, data):
     for asset, allocation in stocks.items():
         try:
             allocation *= context.target_leverage
+            allocation *= 1.0 / 4.0  # Account for leveraged account
             LOG.info("orderering %.2f of %s" % (allocation, asset.symbol))
             order_target_percent(asset, allocation * context.target_leverage)
         except Exception as e:
