@@ -1,3 +1,4 @@
+import os
 from math import floor, isnan
 from pylivetrader.api import (
     schedule_function,
@@ -13,6 +14,7 @@ from pylivetrader.api import (
 import logbook
 
 LOG = logbook.Logger("algo")
+LEVERAGE_USABLE = 4
 
 
 def record(*args, **kwargs):
@@ -22,8 +24,7 @@ def record(*args, **kwargs):
 
 def initialize(context):
     """Sets up the context"""
-    context.leverage_usable = 4
-    context.target_leverage = 3
+    context.target_leverage = os.environ["LEVERAGE"]
 
     schedule_function(
         rebalance, date_rules.every_day(), time_rules.market_open(hours=1, minutes=30)
@@ -51,13 +52,18 @@ def rebalance(context, data):
     for asset, allocation in stocks.items():
         try:
             allocation *= context.target_leverage
-            allocation *= 1.0 / context.leverage_usable
             LOG.info("orderering %.2f of %s" % (allocation, asset.symbol))
-            order_target_percent(asset, allocation * context.target_leverage)
+            order_percent(asset, allocation * context.target_leverage)
         except Exception as e:
             print(e)
 
     LOG.info("done rebalancing")
+
+
+def order_percent(asset, allocation):
+    modifier = 1.0 / LEVERAGE_USABLE
+
+    order_target_percent(asset, allocation * modifier)
 
 
 def record_vars(context, data):
