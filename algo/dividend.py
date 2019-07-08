@@ -7,6 +7,7 @@ from pylivetrader.api import (
     pipeline_output,
     get_open_orders,
     order,
+    order_target_percent,
     cancel_order,
     symbols,
 )
