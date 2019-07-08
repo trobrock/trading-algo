@@ -6,7 +6,7 @@ from pylivetrader.api import (
     get_datetime,
     pipeline_output,
     get_open_orders,
-    order_target_percent,
+    order,
     cancel_order,
     symbols,
 )
@@ -73,9 +73,7 @@ def initialize(context):
     attach_pipeline(my_pipeline(context), "my_pipeline")
 
     schedule_function(
-        rebalance,
-        date_rule=date_rules.every_day(),
-        time_rule=time_rules.market_close(minutes=15),
+        rebalance, date_rule=date_rules.every_day(), time_rule=time_rules.market_open()
     )
 
 
@@ -111,4 +109,17 @@ def rebalance(context, data):
             order_target_percent(asset, 0)
 
     for asset in longs:
-        order_target_percent(asset, allocation)
+        shares = calculate_order(context, data, asset, allocation)
+        order(asset, shares)
+
+
+def calculate_order(context, data, asset, allocation):
+    price = data.current(asset, "price")
+    portfolio_total = context.portfolio.portfolio_value
+
+    shares_total = round((portfolio_total * allocation) / price)
+    current_shares = (
+        context.portfolio[asset]["amount"] if asset in context.portfolio else 0
+    )
+
+    return shares_total - current_shares
