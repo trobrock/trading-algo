@@ -21,6 +21,8 @@ ADD algo /app/algo
 ADD tmp /app/tmp
 ADD run /app
 
+RUN pip install --upgrade pipeline-live
+
 WORKDIR /app
 
 RUN adduser --disabled-password --gecos "" tradealgo
