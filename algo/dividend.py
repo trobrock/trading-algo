@@ -78,7 +78,7 @@ def initialize(context):
         rebalance,
         date_rule=date_rules.every_day(),
         time_rule=time_rules.market_open(
-            hours=os.environ["HOURS"], minutes=os.environ["MINUTES"]
+            hours=int(os.environ["HOURS"]), minutes=int(os.environ["MINUTES"])
         ),
     )
 
