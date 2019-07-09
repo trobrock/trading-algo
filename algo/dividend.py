@@ -85,7 +85,9 @@ def initialize(context):
 
 def before_trading_start(context, data):
     log.info("running pipeline")
-    context.output = pipeline_output("my_pipeline")
+    output = pipeline_output("my_pipeline")
+    output.sort_values("DividendYield", ascending=False, inplace=True)
+    context.output = output.head(20)
     log.info("done")
 
 
@@ -96,7 +98,7 @@ def my_pipeline(context):
     minimum_volume = dollar_volume > 100000
 
     mkt_cap = PolygonCompany.marketcap.latest
-    mkt_cap_top_500 = mkt_cap.top(20)
+    mkt_cap_top_500 = mkt_cap.top(100)
 
     equity_price = USEquityPricing.close.latest
     over_two = equity_price > 2
