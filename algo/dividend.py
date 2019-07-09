@@ -23,6 +23,7 @@ import numpy as np
 import alpaca_trade_api as tradeapi
 from pipeline_live.data.sources.util import parallelize, daily_cache
 
+import os
 import logbook
 
 log = logbook.Logger("algo")
@@ -74,7 +75,11 @@ def initialize(context):
     attach_pipeline(my_pipeline(context), "my_pipeline")
 
     schedule_function(
-        rebalance, date_rule=date_rules.every_day(), time_rule=time_rules.market_open()
+        rebalance,
+        date_rule=date_rules.every_day(),
+        time_rule=time_rules.market_open(
+            hours=os.environ["HOURS"], minutes=os.environ["MINUTES"]
+        ),
     )
 
 
@@ -120,7 +125,9 @@ def calculate_order(context, data, asset, allocation):
 
     shares_total = round((portfolio_total * allocation) / price)
     current_shares = (
-        context.portfolio[asset]["amount"] if asset in context.portfolio else 0
+        context.portfolio.positions[asset]["amount"]
+        if asset in context.portfolio.positions
+        else 0
     )
 
     return shares_total - current_shares
