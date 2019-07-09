@@ -84,7 +84,9 @@ def initialize(context):
 
 
 def before_trading_start(context, data):
+    log.info("running pipeline")
     context.output = pipeline_output("my_pipeline")
+    log.info("done")
 
 
 def my_pipeline(context):
