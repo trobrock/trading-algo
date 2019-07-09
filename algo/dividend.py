@@ -98,6 +98,8 @@ def my_pipeline(context):
     Dividend_Factor = DividendYield()
     pipe.add(Dividend_Factor, "DividendYield")
 
+    pipe.add(USEquityPricing.close.latest, "price")
+
     Pays_Dividend = Dividend_Factor > 0.0
     pipe.set_screen(minimum_volume & mkt_cap_top_500 & over_two & Pays_Dividend)
 
@@ -108,19 +110,17 @@ def rebalance(context, data):
     context.output = pipeline_output("my_pipeline")
 
     allocation = 1.0 / len(context.output)
-    longs = context.output.index.tolist()
 
     for asset in context.portfolio.positions:
-        if asset not in longs:
+        if asset not in context.output.index:
             order_target_percent(asset, 0)
 
-    for asset in longs:
-        shares = calculate_order(context, data, asset, allocation)
+    for asset, row in context.output.iterrows():
+        shares = calculate_order(context, data, asset, allocation, row["price"])
         order(asset, shares)
 
 
-def calculate_order(context, data, asset, allocation):
-    price = data.current(asset, "price")
+def calculate_order(context, data, asset, allocation, price):
     portfolio_total = context.portfolio.portfolio_value
 
     shares_total = round((portfolio_total * allocation) / price)
