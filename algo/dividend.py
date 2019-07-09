@@ -96,7 +96,7 @@ def my_pipeline(context):
     minimum_volume = dollar_volume > 100000
 
     mkt_cap = PolygonCompany.marketcap.latest
-    mkt_cap_top_500 = mkt_cap.top(100)
+    mkt_cap_top_500 = mkt_cap.top(20)
 
     equity_price = USEquityPricing.close.latest
     over_two = equity_price > 2
