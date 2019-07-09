@@ -110,17 +110,22 @@ def rebalance(context, data):
     context.output = pipeline_output("my_pipeline")
 
     allocation = 1.0 / len(context.output)
+    log.info("per stock allocation: %.4f" % allocation)
 
+    log.info("selling stocks no longer in mix")
     for asset in context.portfolio.positions:
         if asset not in context.output.index:
             order_target_percent(asset, 0)
 
+    log.info("rebalancing...")
     for asset, row in context.output.iterrows():
-        shares = calculate_order(context, data, asset, allocation, row["price"])
+        shares = calculate_order(context, asset, allocation, row["price"])
         order(asset, shares)
 
+    log.info("done")
 
-def calculate_order(context, data, asset, allocation, price):
+
+def calculate_order(context, asset, allocation, price):
     portfolio_total = context.portfolio.portfolio_value
 
     shares_total = round((portfolio_total * allocation) / price)
