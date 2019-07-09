@@ -83,6 +83,10 @@ def initialize(context):
     )
 
 
+def before_trading_start(context, data):
+    context.output = pipeline_output("my_pipeline")
+
+
 def my_pipeline(context):
     pipe = Pipeline()
 
@@ -107,8 +111,6 @@ def my_pipeline(context):
 
 
 def rebalance(context, data):
-    context.output = pipeline_output("my_pipeline")
-
     allocation = 1.0 / len(context.output)
     log.info("per stock allocation: %.4f" % allocation)
 
