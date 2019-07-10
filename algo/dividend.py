@@ -112,7 +112,7 @@ def my_pipeline(context):
     )
 
     returns = Returns(
-        inputs=[USEquityPricing.close], mask=base_universe, window_length=365
+        inputs=[USEquityPricing.close], mask=base_universe, window_length=90
     )
 
     dividend_yield = DividendYield(mask=base_universe)
