@@ -15,9 +15,11 @@ from pylivetrader.api import (
 from pipeline_live.data.alpaca.factors import AverageDollarVolume
 from pipeline_live.data.alpaca.pricing import USEquityPricing
 from pipeline_live.data.polygon.fundamentals import PolygonCompany
+from pipeline_live.data.polygon.filters import IsPrimaryShareEmulation
+from pipeline_live.data.sources import polygon
 
 from zipline.pipeline import Pipeline
-from zipline.pipeline.factors import CustomFactor
+from zipline.pipeline.factors import CustomFactor, Returns
 import numpy as np
 
 import alpaca_trade_api as tradeapi
@@ -29,45 +31,47 @@ import logbook
 log = logbook.Logger("algo")
 
 
-def list_symbols():
-    return [
-        a.symbol
-        for a in tradeapi.REST().list_assets()
-        if a.tradable and a.status == "active"
-    ]
-
-
-def polygon_dividends():
-    all_symbols = list_symbols()
-    return _polygon_dividend(all_symbols)
-
-
-@daily_cache(filename="polygon_dividends.pkl")
-def _polygon_dividend(all_symbols):
+def financials(symbols):
     def fetch(symbols):
+        symbol = symbols[0]
         api = tradeapi.REST()
-        params = {"symbols": ",".join(symbols)}
-        return api.polygon.get("/meta/symbols/dividends", params=params)
+        data = api.polygon.get(
+            "/reference/financials/{}".format(symbol), version="v2", params={"limit": 1}
+        )
+        return {symbol: data["results"]}
 
-    return parallelize(fetch, workers=25, splitlen=50)(all_symbols)
+    return parallelize(fetch, workers=25, splitlen=1)(symbols)
 
 
 class DividendYield(CustomFactor):
     window_length = 1
-    inputs = [USEquityPricing.close]
+    inputs = []
 
-    def compute(self, today, assets, out, close):
-        dividends = polygon_dividends()
-        out[:] = (
-            np.array(
-                [
-                    sum([div.get("amount") for div in dividends[asset][0:4]])
-                    if asset in dividends
-                    else 0
-                    for asset in assets
-                ]
-            )
-            / close
+    def compute(self, today, assets, out, *inputs):
+        asset_financials = financials(assets)
+        out[:] = np.array(
+            [
+                asset_financials[asset][0].get("dividendYield", 0)
+                if asset_financials[asset]
+                else 0
+                for asset in assets
+            ]
+        )
+
+
+class PriceEarningsRatio(CustomFactor):
+    window_length = 1
+    inputs = []
+
+    def compute(self, today, assets, out, *inputs):
+        asset_financials = financials(assets)
+        out[:] = np.array(
+            [
+                asset_financials[asset][0].get("priceToEarningsRatio", 0)
+                if asset_financials[asset]
+                else 0
+                for asset in assets
+            ]
         )
 
 
@@ -86,7 +90,7 @@ def initialize(context):
 def before_trading_start(context, data):
     log.info("running pipeline")
     output = pipeline_output("my_pipeline")
-    output.sort_values("DividendYield", ascending=False, inplace=True)
+    output.sort_values("rank", ascending=False, inplace=True)
     context.output = output.head(20)
     log.info("done")
 
@@ -98,18 +102,32 @@ def my_pipeline(context):
     minimum_volume = dollar_volume > 100000
 
     mkt_cap = PolygonCompany.marketcap.latest
-    mkt_cap_top_500 = mkt_cap.top(100)
+    mkt_cap_top_500 = mkt_cap.top(500)
 
     equity_price = USEquityPricing.close.latest
     over_two = equity_price > 2
 
-    Dividend_Factor = DividendYield()
-    pipe.add(Dividend_Factor, "DividendYield")
+    base_universe = (
+        IsPrimaryShareEmulation() & minimum_volume & mkt_cap_top_500 & over_two
+    )
+
+    returns = Returns(
+        inputs=[USEquityPricing.close], mask=base_universe, window_length=365
+    )
+
+    dividend_yield = DividendYield(mask=base_universe)
+    pipe.add(dividend_yield, "dividend_yield")
+    pipe.add(returns, "returns")
+    pipe.add((returns.rank() * dividend_yield.rank()).rank(), "rank")
+
+    pe_ratio = PriceEarningsRatio(mask=base_universe)
+    pipe.add(pe_ratio, "pe_ratio")
 
     pipe.add(USEquityPricing.close.latest, "price")
 
-    Pays_Dividend = Dividend_Factor > 0.0
-    pipe.set_screen(minimum_volume & mkt_cap_top_500 & over_two & Pays_Dividend)
+    good_pe_ratio = (pe_ratio > 0) & (pe_ratio <= 20)
+    pays_dividend = dividend_yield > 0.0
+    pipe.set_screen(base_universe & pays_dividend & good_pe_ratio)
 
     return pipe
 
