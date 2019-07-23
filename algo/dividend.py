@@ -159,4 +159,4 @@ def calculate_order(context, asset, allocation, price):
         else 0
     )
 
-    return shares_total - current_shares
+    return max(0, shares_total - current_shares)
