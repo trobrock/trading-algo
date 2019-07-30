@@ -91,7 +91,7 @@ def before_trading_start(context, data):
     log.info("running pipeline")
     output = pipeline_output("my_pipeline")
     output.sort_values("rank", ascending=False, inplace=True)
-    context.output = output.head(20)
+    context.output = output
     log.info("done")
 
 
@@ -133,20 +133,29 @@ def my_pipeline(context):
 
 
 def rebalance(context, data):
-    allocation = 1.0 / len(context.output)
-    log.info("per stock allocation: %.4f" % allocation)
-
-    log.info("selling stocks no longer in mix")
-    for asset in context.portfolio.positions:
-        if asset not in context.output.index:
-            order_target_percent(asset, 0)
-
     log.info("rebalancing...")
-    for asset, row in context.output.iterrows():
-        shares = calculate_order(context, asset, allocation, row["price"])
+
+    target_assets = compute_target_assets(context)
+    target_allocation = 0.95 / len(target_assets)  # Leave 5% cash buffer
+    log.info("target allocation: %.4f" % target_allocation)
+
+    for asset in target_assets:
+        price = data.current(asset, "price")
+        shares = calculate_order(context, asset, target_allocation, price)
         order(asset, shares)
 
     log.info("done")
+
+
+def compute_target_assets(context):
+    target_assets = set()
+    for asset, row in context.output.head(20).iterrows():
+        target_assets.add(asset)
+
+    for asset in context.portfolio.positions:
+        target_assets.add(asset)
+
+    return target_assets
 
 
 def calculate_order(context, asset, allocation, price):
@@ -159,4 +168,4 @@ def calculate_order(context, asset, allocation, price):
         else 0
     )
 
-    return max(0, shares_total - current_shares)
+    return max(shares_total - current_shares, 0)
