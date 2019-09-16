@@ -101,7 +101,7 @@ def print_report(context, data):
                 asset.symbol,
                 d[0]["amount"],
                 d[0]["paymentDate"],
-                data.history([asset], "price", 1, "1d").values[0][0],
+                data.history([asset], "price", 5, "1d").values[-1][0],
             )
         )
 
