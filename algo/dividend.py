@@ -10,6 +10,7 @@ from pylivetrader.api import (
     order_target_percent,
     cancel_order,
     symbols,
+    symbol,
 )
 
 from pipeline_live.data.alpaca.factors import AverageDollarVolume
@@ -21,6 +22,7 @@ from pipeline_live.data.sources import polygon
 from zipline.pipeline import Pipeline
 from zipline.pipeline.factors import CustomFactor, Returns
 import numpy as np
+import pandas as pd
 
 import alpaca_trade_api as tradeapi
 from pipeline_live.data.sources.util import parallelize, daily_cache
@@ -37,6 +39,18 @@ def financials(symbols):
         api = tradeapi.REST()
         data = api.polygon.get(
             "/reference/financials/{}".format(symbol), version="v2", params={"limit": 1}
+        )
+        return {symbol: data["results"]}
+
+    return parallelize(fetch, workers=25, splitlen=1)(symbols)
+
+
+def dividends(symbols):
+    def fetch(symbols):
+        symbol = symbols[0]
+        api = tradeapi.REST()
+        data = api.polygon.get(
+            "/reference/dividends/{}".format(symbol), version="v2", params={"limit": 1}
         )
         return {symbol: data["results"]}
 
@@ -75,6 +89,34 @@ class PriceEarningsRatio(CustomFactor):
         )
 
 
+def print_report(context, data):
+    data_rows = []
+
+    for s, d in dividends(
+        [asset.symbol for asset in context.portfolio.positions]
+    ).items():
+        asset = symbol(s)
+        data_rows.append(
+            (
+                asset.symbol,
+                d[0]["amount"],
+                d[0]["paymentDate"],
+                data.history([asset], "price", 1, "1d").values[0][0],
+            )
+        )
+
+    # Symbol, EX Date, Payment Date, Amount, Current Yield, Time To Payment
+    portfolio = pd.DataFrame(
+        data_rows,
+        columns=["asset", "dividend_amount", "dividend_payment_date", "price"],
+    ).set_index(["asset"])
+
+    portfolio["current_yield"] = (
+        portfolio["dividend_amount"] * 4 / portfolio["price"]
+    ) * 100
+    log.info(portfolio.sort_values("dividend_payment_date"))
+
+
 def initialize(context):
     attach_pipeline(my_pipeline(context), "my_pipeline")
 
@@ -84,6 +126,11 @@ def initialize(context):
         time_rule=time_rules.market_open(
             hours=int(os.environ["HOURS"]), minutes=int(os.environ["MINUTES"])
         ),
+    )
+    schedule_function(
+        print_report,
+        date_rule=date_rules.every_day(),
+        time_rule=time_rules.market_close(),
     )
 
 
@@ -98,11 +145,11 @@ def before_trading_start(context, data):
 def my_pipeline(context):
     pipe = Pipeline()
 
-    dollar_volume = AverageDollarVolume(window_length=20)
-    minimum_volume = dollar_volume > 100000
-
     mkt_cap = PolygonCompany.marketcap.latest
     mkt_cap_top_500 = mkt_cap.top(500)
+
+    dollar_volume = AverageDollarVolume(window_length=20, mask=mkt_cap_top_500)
+    minimum_volume = dollar_volume > 100000
 
     equity_price = USEquityPricing.close.latest
     over_two = equity_price > 2
