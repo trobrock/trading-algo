@@ -187,7 +187,7 @@ def rebalance(context, data):
     log.info("target allocation: %.4f" % target_allocation)
 
     for asset in target_assets:
-        price = data.current(asset, "price")
+        price = data.history([asset], "price", 5, "1d").values[-1][0],
         shares = calculate_order(context, asset, target_allocation, price)
         order(asset, shares)
 
