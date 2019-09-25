@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+docker run -it --rm \
+  -e APCA_API_KEY_ID \
+  -e APCA_API_SECRET_KEY \
+  -e APCA_API_BASE_URL \
+  -e REDIS_URL=$REDISTOGO_URL \
+  -e LEVERAGE \
+  -e HOURS \
+  -e MINUTES \
+  -w /app \
+  -v "$(pwd)/algo":/app/algo \
+  pylivetrader-dev \
+  pylivetrader shell -f $1

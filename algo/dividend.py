@@ -3,13 +3,8 @@ from pylivetrader.api import (
     date_rules,
     time_rules,
     attach_pipeline,
-    get_datetime,
     pipeline_output,
-    get_open_orders,
     order,
-    order_target_percent,
-    cancel_order,
-    symbols,
     symbol,
 )
 
@@ -17,7 +12,6 @@ from pipeline_live.data.alpaca.factors import AverageDollarVolume
 from pipeline_live.data.alpaca.pricing import USEquityPricing
 from pipeline_live.data.polygon.fundamentals import PolygonCompany
 from pipeline_live.data.polygon.filters import IsPrimaryShareEmulation
-from pipeline_live.data.sources import polygon
 
 from zipline.pipeline import Pipeline
 from zipline.pipeline.factors import CustomFactor, Returns
@@ -25,7 +19,7 @@ import numpy as np
 import pandas as pd
 
 import alpaca_trade_api as tradeapi
-from pipeline_live.data.sources.util import parallelize, daily_cache
+from pipeline_live.data.sources.util import parallelize
 
 import os
 import logbook
@@ -187,7 +181,7 @@ def rebalance(context, data):
     log.info("target allocation: %.4f" % target_allocation)
 
     for asset in target_assets:
-        price = data.history([asset], "price", 5, "1d").values[-1][0],
+        price = data.history([asset], "price", 5, "1d").values[-1][0]
         shares = calculate_order(context, asset, target_allocation, price)
         order(asset, shares)
 

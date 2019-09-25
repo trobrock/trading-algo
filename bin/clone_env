@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+export $(heroku config -r heroku -s | sed "s/'//g")
+
+exec $SHELL -l
