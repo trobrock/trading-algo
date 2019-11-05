@@ -209,4 +209,10 @@ def calculate_order(context, asset, allocation, price):
         else 0
     )
 
+    log.info(
+        "asset: {}, shares_total: {}, current_shares: {}, price: {}".format(
+            asset.symbol, shares_total, current_shares, price
+        )
+    )
+
     return max(shares_total - current_shares, 0)
