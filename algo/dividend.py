@@ -189,7 +189,6 @@ def rebalance(context, data):
             continue
 
         log.info("trying to add {}".format(new_asset.symbol))
-
         potential_portfolio = portfolio.copy()
         potential_portfolio[new_asset] = 0
 
@@ -204,13 +203,11 @@ def rebalance(context, data):
                 prices[asset] = price
 
             shares = round((portfolio_total * target_allocation) / price)
-
             log.info(
                 "asset: {}, shares: {}, current_shares: {}, price: {}".format(
                     asset.symbol, shares, current_shares, price
                 )
             )
-
             potential_portfolio[asset] = max(current_shares, shares)
 
         print_portfolio(potential_portfolio)
