@@ -176,43 +176,69 @@ def my_pipeline(context):
 def rebalance(context, data):
     log.info("rebalancing...")
 
-    target_assets = compute_target_assets(context)
-    target_allocation = 0.95 / len(target_assets)  # Leave 5% cash buffer
-    log.info("target allocation: %.4f" % target_allocation)
+    portfolio_total = context.portfolio.portfolio_value
+    portfolio = {}
+    prices = {}
 
-    for asset in target_assets:
-        price = data.history([asset], "price", 5, "1d").values[-1][0]
-        shares = calculate_order(context, asset, target_allocation, price)
-        order(asset, shares)
+    for asset, position in context.portfolio.positions.items():
+        portfolio[asset] = position.amount
+
+    for new_asset, row in context.output.head(20).iterrows():
+        if new_asset in portfolio:
+            log.info("already have {}, skipping".format(new_asset.symbol))
+            continue
+
+        log.info("trying to add {}".format(new_asset.symbol))
+
+        potential_portfolio = portfolio.copy()
+        potential_portfolio[new_asset] = 0
+
+        target_allocation = 0.95 / len(potential_portfolio)  # Leave 5% cash buffer
+        log.info("target allocation: %.4f" % target_allocation)
+
+        for asset, current_shares in potential_portfolio.items():
+            if asset in prices:
+                price = prices[asset]
+            else:
+                price = data.history([asset], "price", 5, "1d").values[-1][0]
+                prices[asset] = price
+
+            shares = round((portfolio_total * target_allocation) / price)
+
+            log.info(
+                "asset: {}, shares: {}, current_shares: {}, price: {}".format(
+                    asset.symbol, shares, current_shares, price
+                )
+            )
+
+            potential_portfolio[asset] = max(current_shares, shares)
+
+        print_portfolio(potential_portfolio)
+
+        if potential_portfolio[new_asset] > 0:
+            log.info("keeping {}".format(new_asset.symbol))
+            portfolio = potential_portfolio
+
+    print_portfolio(portfolio)
+
+    for asset, shares in portfolio.items():
+        current_shares = (
+            context.portfolio.positions[asset]["amount"]
+            if asset in context.portfolio.positions
+            else 0
+        )
+        share_diff = shares - current_shares
+        if share_diff:
+            log.info("buying {} shares of {}".format(share_diff, asset.symbol))
+            order(asset, share_diff)
 
     log.info("done")
 
 
-def compute_target_assets(context):
-    target_assets = set()
-    for asset, row in context.output.head(20).iterrows():
-        target_assets.add(asset)
+def print_portfolio(portfolio):
+    log.info("*" * 50)
 
-    for asset in context.portfolio.positions:
-        target_assets.add(asset)
+    for asset, shares in portfolio.items():
+        log.info("{}: {}".format(asset.symbol, shares))
 
-    return target_assets
-
-
-def calculate_order(context, asset, allocation, price):
-    portfolio_total = context.portfolio.portfolio_value
-
-    shares_total = round((portfolio_total * allocation) / price)
-    current_shares = (
-        context.portfolio.positions[asset]["amount"]
-        if asset in context.portfolio.positions
-        else 0
-    )
-
-    log.info(
-        "asset: {}, shares_total: {}, current_shares: {}, price: {}".format(
-            asset.symbol, shares_total, current_shares, price
-        )
-    )
-
-    return max(shares_total - current_shares, 0)
+    log.info("*" * 50)
