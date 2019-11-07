@@ -173,63 +173,138 @@ def my_pipeline(context):
     return pipe
 
 
+class PortfolioOptimizer(object):
+    CASH_BUFFER = 0.05
+
+    def __init__(
+        self, portfolio_value, cash_available, current_portfolio, get_price_fn
+    ):
+        self.portfolio_value = portfolio_value
+        self.cash_available = cash_available
+        self.current_portfolio = current_portfolio
+        self.new_portfolio = current_portfolio.copy()
+        self.get_price_fn = get_price_fn
+        self.price_cache = {}
+
+        self.load_prices()
+        self.rebalance(self.new_portfolio.copy())
+
+    def add(self, stock):
+        if stock in self.current_portfolio:
+            return True
+
+        attempted_portfolio = self.new_portfolio.copy()
+        attempted_portfolio[stock] = 0
+        log.info(f"attempting to add {stock} to portfolio @ {self.get_price(stock)}")
+
+        return self.rebalance(attempted_portfolio)
+
+    def rebalance(self, attempted_portfolio):
+        target_allocation = (1 - self.CASH_BUFFER) / len(attempted_portfolio)
+        cost_of_update = 0.0
+        log.info(f"target_allocation: {target_allocation}")
+
+        for stock, current_shares in attempted_portfolio.items():
+            target_shares = round(
+                (self.portfolio_value * target_allocation) / self.get_price(stock)
+            )
+
+            if target_shares <= current_shares:
+                continue
+
+            cost_of_update += (target_shares - current_shares) * self.get_price(stock)
+            log.info(
+                f"[{stock}] cost_of_update:{cost_of_update} cash_available:{self.cash_available}"
+            )
+            attempted_portfolio[stock] = target_shares
+
+        attempted_portfolio = {
+            stock: quantity
+            for stock, quantity in attempted_portfolio.items()
+            if quantity > 0
+        }
+        if (
+            attempted_portfolio != self.new_portfolio
+            and cost_of_update <= self.cash_available
+        ):
+            log.info(f"found ideal portfolio: {attempted_portfolio}")
+            self.cash_available -= cost_of_update
+            self.new_portfolio = attempted_portfolio
+            return True
+        else:
+            return False
+
+    def optimizations(self):
+        return {
+            stock: target_amount - self.current_portfolio.get(stock, 0)
+            for stock, target_amount in self.new_portfolio.items()
+            if target_amount - self.current_portfolio.get(stock, 0) > 0
+        }
+
+    def get_price(self, stock):
+        if stock in self.price_cache:
+            return self.price_cache[stock]
+
+        price = self.get_price_fn(stock)
+        if price:
+            self.price_cache[stock] = price
+
+    def load_prices(self):
+        for stock in self.current_portfolio.keys():
+            self.get_price(stock)
+
+
+def get_price_fn(data):
+    return lambda stock: data.history([symbol(stock)], "price", 5, "1d").values[-1][0]
+
+
 def rebalance(context, data):
     log.info("rebalancing...")
 
-    portfolio_total = context.portfolio.portfolio_value
-    portfolio = {}
-    prices = {}
-
-    for asset, position in context.portfolio.positions.items():
-        portfolio[asset] = position.amount
+    current_portfolio = {
+        asset.symbol: position.amount
+        for asset, position in context.portfolio.positions.items()
+    }
+    optimizer = PortfolioOptimizer(
+        context.portfolio.portfolio_value,
+        context.portfolio.cash,
+        current_portfolio,
+        get_price_fn(data),
+    )
 
     for new_asset, row in context.output.head(20).iterrows():
-        if new_asset in portfolio:
-            log.info("already have {}, skipping".format(new_asset.symbol))
-            continue
+        optimizer.add(new_asset.symbol)
 
-        log.info("trying to add {}".format(new_asset.symbol))
-        potential_portfolio = portfolio.copy()
-        potential_portfolio[new_asset] = 0
+    validate(context, data, optimizer)
 
-        target_allocation = 0.95 / len(potential_portfolio)  # Leave 5% cash buffer
-        log.info("target allocation: %.4f" % target_allocation)
-
-        for asset, current_shares in potential_portfolio.items():
-            if asset in prices:
-                price = prices[asset]
-            else:
-                price = data.history([asset], "price", 5, "1d").values[-1][0]
-                prices[asset] = price
-
-            shares = round((portfolio_total * target_allocation) / price)
-            log.info(
-                "asset: {}, shares: {}, current_shares: {}, price: {}".format(
-                    asset.symbol, shares, current_shares, price
-                )
-            )
-            potential_portfolio[asset] = max(current_shares, shares)
-
-        print_portfolio(potential_portfolio)
-
-        if potential_portfolio[new_asset] > 0:
-            log.info("keeping {}".format(new_asset.symbol))
-            portfolio = potential_portfolio
-
-    print_portfolio(portfolio)
-
-    for asset, shares in portfolio.items():
-        current_shares = (
-            context.portfolio.positions[asset]["amount"]
-            if asset in context.portfolio.positions
-            else 0
-        )
-        share_diff = shares - current_shares
-        if share_diff:
-            log.info("buying {} shares of {}".format(share_diff, asset.symbol))
-            order(asset, share_diff)
+    for stock, quantity in optimizer.optimizations().items():
+        order(symbol(stock), quantity)
 
     log.info("done")
+
+
+def validate(context, data, optimizer):
+    log.info(f"found optimizations: {optimizer.optimizations()}")
+    cost_of_update = sum(
+        [
+            amount * get_price_fn(data)(stock)
+            for stock, amount in optimizer.optimizations().items()
+        ]
+    )
+    log.info(
+        f"cash_available:{context.portfolio.cash} needed_for_change:{cost_of_update}"
+    )
+
+    dollar_value = {}
+    total = 0.0
+    for stock, quantity in optimizer.new_portfolio.items():
+        dollar_value[stock] = quantity * get_price_fn(data)(stock)
+        total += dollar_value[stock]
+
+    for stock, dollars in dollar_value.items():
+        log.info(f"{stock}: {(dollars / total) * 100}%")
+
+    log.info("done with validation")
 
 
 def print_portfolio(portfolio):
