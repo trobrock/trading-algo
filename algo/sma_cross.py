@@ -24,6 +24,6 @@ def handle_data(context, data):
     if short_mavg > long_mavg:
         # order_target orders as many shares as needed to
         # achieve the desired number of shares.
-        # order_target_percent(context.asset, 1)
+        order_target_percent(context.asset, 1)
     elif short_mavg < long_mavg:
-        # order_target_percent(context.asset, 0)
+        order_target_percent(context.asset, 0)
