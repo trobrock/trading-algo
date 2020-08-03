@@ -12,8 +12,8 @@ def handle_data(context, data):
     # Compute averages
     # data.history() has to be called with the same params
     # from above and returns a pandas dataframe.
-    short_mavg = data.history(context.asset, 'price', bar_count=20, frequency="4h").ewm(com=0.5).mean().tail(1)
-    long_mavg = data.history(context.asset, 'price', bar_count=40, frequency="4h").ewm(com=0.5).mean().tail(1)
+    short_mavg = data.history(context.asset, 'price', bar_count=20, frequency="4h").mean()
+    long_mavg = data.history(context.asset, 'price', bar_count=40, frequency="4h").mean()
 
     log.info(
             '''
