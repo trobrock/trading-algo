@@ -15,6 +15,7 @@ def handle_data(context, data):
     # from above and returns a pandas dataframe.
     prices = data.history(context.asset, 'price', bar_count=10000, frequency="1m")
     prices = prices.resample('240T').last().dropna()
+    print(prices)
 
     short_mavg = talib.EMA(prices, 20)
     long_mavg = talib.EMA(prices, 40)
