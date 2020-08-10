@@ -1,6 +1,7 @@
 from pylivetrader.api import order_target_percent, symbol
 
 import logbook
+import talib
 
 log = logbook.Logger('algo')
 
@@ -12,8 +13,11 @@ def handle_data(context, data):
     # Compute averages
     # data.history() has to be called with the same params
     # from above and returns a pandas dataframe.
-    short_mavg = data.history(context.asset, 'price', bar_count=80, frequency="1h").mean()
-    long_mavg = data.history(context.asset, 'price', bar_count=320, frequency="1h").mean()
+    prices = data.history(context.asset, 'price', bar_count=10000, frequency="1m")
+    prices = prices.resample('240T').last().dropna()
+
+    short_mavg = talib.EMA(prices, 20)
+    long_mavg = talib.EMA(prices, 40)
 
     log.info(
             '''
